@@ -269,33 +269,33 @@ export default function WorkDetailPage({
       <div className="flex-1 flex flex-col overflow-hidden">
         <AppHeader />
 
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4">
           {/* Back to List */}
           <button
             onClick={() => router.push("/")}
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4"
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-2"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-3.5 w-3.5" />
             Back to List
           </button>
 
           {/* Header */}
-          <div className="grid grid-cols-4 gap-6 mb-6">
-            {/* Left side - Order info and Worker (3 columns to match Member Info) */}
+          <div className="grid grid-cols-4 gap-4 mb-3">
+            {/* Left side - Order info and Worker */}
             <div className="col-span-3 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <h1 className="text-xl font-bold">{item.orderNumber}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-base font-bold">{item.orderNumber}</h1>
                 {getStatusBadge(item.status)}
-                <Badge variant="outline" className="px-3 py-1 text-green-600 border-green-600">
+                <Badge variant="outline" className="px-2 py-0.5 text-xs text-green-600 border-green-600">
                   Online
                 </Badge>
               </div>
 
-              {/* Worker - aligned to right edge of col-span-3 */}
-              <div className="flex items-center gap-2 text-sm">
+              {/* Worker */}
+              <div className="flex items-center gap-2 text-xs">
                 <span className="text-muted-foreground">Worker</span>
                 <Select defaultValue="monster1437" disabled={!isEditable}>
-                  <SelectTrigger className={`w-[180px] h-9 ${!isEditable ? "opacity-60 cursor-not-allowed" : ""}`}>
+                  <SelectTrigger className={`w-[160px] h-7 text-xs ${!isEditable ? "opacity-60 cursor-not-allowed" : ""}`}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -306,77 +306,74 @@ export default function WorkDetailPage({
                 </Select>
               </div>
             </div>
-            {/* Right side - Action Buttons (1 column aligned with right sidebar) */}
-            <div className="col-span-1 flex items-center justify-end gap-2">
+            {/* Right side - Action Buttons */}
+            <div className="col-span-1 flex items-center justify-end gap-1.5">
               <Button
                 variant="outline"
+                size="sm"
                 onClick={handleWorkPrint}
-                className="gap-2 bg-transparent"
+                className="gap-1.5 bg-transparent h-7 text-xs px-2.5"
               >
-                <Package className="h-4 w-4" />
+                <Package className="h-3.5 w-3.5" />
                 Work Print
               </Button>
               <Button
                 variant="outline"
+                size="sm"
                 onClick={handleInvoicePrint}
-                className="gap-2 bg-transparent"
+                className="gap-1.5 bg-transparent h-7 text-xs px-2.5"
               >
-                <FileText className="h-4 w-4" />
+                <FileText className="h-3.5 w-3.5" />
                 Invoice
               </Button>
               <Button
                 variant="outline"
+                size="sm"
                 onClick={handleLabelPrint}
                 disabled={!isLabelPrintEnabled}
-                className="gap-2 bg-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                className="gap-1.5 bg-transparent h-7 text-xs px-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Printer className="h-4 w-4" />
+                <Printer className="h-3.5 w-3.5" />
                 Label Print
               </Button>
             </div>
           </div>
 
-          <div className="grid grid-cols-4 gap-6">
+          <div className="grid grid-cols-4 gap-4">
             {/* Left Column - Main Content (3 columns) */}
-            <div className="col-span-3 space-y-6">
+            <div className="col-span-3 space-y-3">
               {/* Member Info Card */}
               <Card>
-                <CardHeader className="pb-0">
-                  <CardTitle className="text-base">Member Info</CardTitle>
+                <CardHeader className="pb-1 pt-2.5 px-3">
+                  <CardTitle className="text-xs font-semibold">Member Info</CardTitle>
                 </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-                    <div>
-                      <span className="text-muted-foreground text-xs">Country</span>
-                      <p className="font-medium">{item.country}</p>
-                    </div>
+                <CardContent className="pt-0 px-3 pb-2.5">
+                  <div className="flex items-center gap-4 text-xs mb-1.5">
+                    <span className="text-muted-foreground text-[10px]">Country</span>
+                    <span className="font-medium">{item.country}</span>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground text-xs">Membership</span>
-                    <div className="mt-2 border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <p className="font-medium">{item.membership.email}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {item.membership.phone} · {item.membership.provider}
-                          </p>
-                        </div>
-                        <Button
-                          variant="default"
-                          size="sm"
-                          className="bg-[oklch(0.7_0.15_55)] hover:bg-[oklch(0.65_0.15_55)] text-white gap-1"
-                        >
-                          <ImageIcon className="h-3 w-3" />
-                          Prescription View
-                        </Button>
+                  <div className="border rounded p-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-[11px]">{item.membership.email}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {item.membership.phone} · {item.membership.provider} · {item.membership.joinDate}
+                        </p>
                       </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span>{item.membership.joinDate}</span>
+                      <div className="flex items-center gap-1.5">
                         {item.membership.isActive && (
-                          <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                          <Badge className="bg-green-100 text-green-700 hover:bg-green-100 text-[9px] px-1.5 py-0">
                             Active
                           </Badge>
                         )}
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="bg-[oklch(0.7_0.15_55)] hover:bg-[oklch(0.65_0.15_55)] text-white gap-1 h-5 text-[10px] px-1.5"
+                        >
+                          <ImageIcon className="h-2.5 w-2.5" />
+                          Prescription View
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -385,47 +382,57 @@ export default function WorkDetailPage({
 
               {/* Order Info Card */}
               <Card>
-                <CardHeader className="pb-0">
-                  <CardTitle className="text-base">Order Info</CardTitle>
+                <CardHeader className="pb-1 pt-2.5 px-3">
+                  <CardTitle className="text-xs font-semibold">Order Info</CardTitle>
                 </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-                    <div>
-                      <span className="text-muted-foreground text-xs">Order Date</span>
-                      <p className="font-medium">{item.orderDate}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground text-xs">Store Info</span>
-                      <p className="font-medium">{item.storeCode} / {item.storeName}</p>
-                    </div>
-                  </div>
-
+                <CardContent className="pt-0 px-3 pb-2.5">
                   {/* Products Table */}
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="text-xs">Type</TableHead>
-                        <TableHead className="text-xs">Product Info</TableHead>
-                        <TableHead className="text-xs">Mapped Product</TableHead>
-                        <TableHead className="text-xs text-center">Qty</TableHead>
-                        <TableHead className="text-xs text-right">Total Price</TableHead>
-                        <TableHead className="text-xs text-center">C.O.F</TableHead>
+                        <TableHead className="text-[10px] py-1 w-[110px]">Type</TableHead>
+                        <TableHead className="text-[10px] py-1">Product Info</TableHead>
+                        <TableHead className="text-[10px] py-1">Mapped Product</TableHead>
+                        <TableHead className="text-[10px] py-1 text-center w-[40px]">Qty</TableHead>
+                        <TableHead className="text-[10px] py-1 text-right w-[70px]">Total Price</TableHead>
+                        <TableHead className="text-[10px] py-1 text-center w-[40px]">C.O.F</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {/* Order Date & Store Info row aligned with table columns */}
+                      <TableRow className="border-b-0">
+                        <TableCell className="py-1 text-[10px] text-muted-foreground" colSpan={1}>Order Date</TableCell>
+                        <TableCell className="py-1 text-[10px] font-medium">{item.orderDate}</TableCell>
+                        <TableCell className="py-1 text-[10px] text-muted-foreground">Store Info</TableCell>
+                        <TableCell className="py-1 text-[10px] font-medium" colSpan={3}>{item.storeCode} / {item.storeName}</TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-[10px] py-1 w-[110px]">Type</TableHead>
+                        <TableHead className="text-[10px] py-1">Product Info</TableHead>
+                        <TableHead className="text-[10px] py-1">Mapped Product</TableHead>
+                        <TableHead className="text-[10px] py-1 text-center w-[40px]">Qty</TableHead>
+                        <TableHead className="text-[10px] py-1 text-right w-[70px]">Total Price</TableHead>
+                        <TableHead className="text-[10px] py-1 text-center w-[40px]">C.O.F</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {item.products.map((product, index) => (
                         <TableRow key={index}>
-                          <TableCell>
-                            <Badge className={`${product.typeColor} text-xs font-medium`}>
+                          <TableCell className="py-1">
+                            <Badge className={`${product.typeColor} text-[9px] font-medium px-1.5 py-0`}>
                               {product.type}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-xs">{product.productInfo}</TableCell>
-                          <TableCell className="text-xs">{product.mappedProduct}</TableCell>
-                          <TableCell className="text-center text-xs">{product.qty}</TableCell>
-                          <TableCell className="text-right text-xs">{product.totalPrice}</TableCell>
-                          <TableCell className="text-center">
-                            <Checkbox checked={product.cof} disabled />
+                          <TableCell className="text-[10px] py-1">{product.productInfo}</TableCell>
+                          <TableCell className="text-[10px] py-1">{product.mappedProduct}</TableCell>
+                          <TableCell className="text-center text-[10px] py-1">{product.qty}</TableCell>
+                          <TableCell className="text-right text-[10px] py-1">{product.totalPrice}</TableCell>
+                          <TableCell className="text-center py-1">
+                            <Checkbox checked={product.cof} disabled className="h-3 w-3" />
                           </TableCell>
                         </TableRow>
                       ))}
@@ -436,111 +443,105 @@ export default function WorkDetailPage({
 
               {/* Tabs: Prescription, Additional Details, Comment */}
               <Tabs defaultValue="prescription" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 bg-transparent rounded-none h-auto p-0 border-b">
+                <TabsList className="grid w-full grid-cols-3 h-9 bg-muted/50 rounded-lg p-0.5">
                   <TabsTrigger
                     value="prescription"
-                    className="rounded-none border-b-2 border-transparent py-4 text-muted-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                    className="rounded-md py-1.5 text-xs font-medium text-muted-foreground transition-all data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
                   >
                     Prescription
                   </TabsTrigger>
                   <TabsTrigger
                     value="additional"
-                    className="rounded-none border-b-2 border-transparent py-4 text-muted-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                    className="rounded-md py-1.5 text-xs font-medium text-muted-foreground transition-all data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
                   >
                     Additional Details
                   </TabsTrigger>
                   <TabsTrigger
                     value="comment"
-                    className="rounded-none border-b-2 border-transparent py-4 text-muted-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                    className="rounded-md py-1.5 text-xs font-medium text-muted-foreground transition-all data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
                   >
                     Comment
                   </TabsTrigger>
                 </TabsList>
 
                 {/* Prescription Tab */}
-                <TabsContent value="prescription" className="mt-6 space-y-6">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Check className="h-4 w-4 text-primary" />
+                <TabsContent value="prescription" className="mt-3 space-y-3">
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <Check className="h-3.5 w-3.5 text-primary" />
                     <span className="font-medium">Prescription Values</span>
                   </div>
 
                   {/* Prescription Table */}
-                  <div className="space-y-4">
-                    {/* OS (Left Eye) */}
-                    <div className="grid grid-cols-6 gap-4 items-center">
-                      <div className="bg-muted rounded-lg p-4 text-center">
-                        <span className="text-sm font-medium">OS (Left Eye)</span>
-                      </div>
-                      <div className="text-center">
-                        <span className="text-xs text-muted-foreground block mb-1">SPH</span>
-                        <span className="font-medium text-primary">{item.prescription.os.sph}</span>
-                      </div>
-                      <div className="text-center">
-                        <span className="text-xs text-muted-foreground block mb-1">CYL</span>
-                        <span className="font-medium">{item.prescription.os.cyl}</span>
-                      </div>
-                      <div className="text-center">
-                        <span className="text-xs text-muted-foreground block mb-1">Axis</span>
-                        <span className="font-medium">{item.prescription.os.axis}</span>
-                      </div>
-                      <div className="text-center">
-                        <span className="text-xs text-muted-foreground block mb-1">PD</span>
-                        <span className="font-medium">{item.prescription.os.pd}</span>
-                      </div>
-                      <div className="text-center">
-                        <span className="text-xs text-muted-foreground block mb-1">OC</span>
-                        <span className="font-medium">{item.prescription.os.oc}</span>
-                      </div>
-                    </div>
-
-                    {/* OD (Right Eye) */}
-                    <div className="grid grid-cols-6 gap-4 items-center">
-                      <div className="bg-muted rounded-lg p-4 text-center">
-                        <span className="text-sm font-medium">OD (Right Eye)</span>
-                      </div>
-                      <div className="text-center">
-                        <span className="text-xs text-muted-foreground block mb-1">SPH</span>
-                        <span className="font-medium text-primary">{item.prescription.od.sph}</span>
-                      </div>
-                      <div className="text-center">
-                        <span className="text-xs text-muted-foreground block mb-1">CYL</span>
-                        <span className="font-medium">{item.prescription.od.cyl}</span>
-                      </div>
-                      <div className="text-center">
-                        <span className="text-xs text-muted-foreground block mb-1">Axis</span>
-                        <span className="font-medium">{item.prescription.od.axis}</span>
-                      </div>
-                      <div className="text-center">
-                        <span className="text-xs text-muted-foreground block mb-1">PD</span>
-                        <span className="font-medium">{item.prescription.od.pd}</span>
-                      </div>
-                      <div className="text-center">
-                        <span className="text-xs text-muted-foreground block mb-1">OC</span>
-                        <span className="font-medium">{item.prescription.od.oc}</span>
-                      </div>
-                    </div>
+                  <div className="border rounded-md overflow-hidden">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-muted/60 border-b">
+                          <th className="py-2 px-3 text-[11px] font-semibold text-muted-foreground text-center w-[120px]"></th>
+                          <th className="py-2 px-3 text-[11px] font-semibold text-muted-foreground text-center">SPH</th>
+                          <th className="py-2 px-3 text-[11px] font-semibold text-muted-foreground text-center">CYL</th>
+                          <th className="py-2 px-3 text-[11px] font-semibold text-muted-foreground text-center">Axis</th>
+                          <th className="py-2 px-3 text-[11px] font-semibold text-muted-foreground text-center">PD</th>
+                          <th className="py-2 px-3 text-[11px] font-semibold text-muted-foreground text-center">OC</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="border-b">
+                          <td className="py-2.5 px-3">
+                            <div className="bg-muted rounded py-1.5 px-2 text-center">
+                              <span className="text-xs font-medium">OS (Left Eye)</span>
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3 text-center font-semibold text-primary">{item.prescription.os.sph}</td>
+                          <td className="py-2.5 px-3 text-center font-semibold">{item.prescription.os.cyl}</td>
+                          <td className="py-2.5 px-3 text-center font-semibold">{item.prescription.os.axis}</td>
+                          <td className="py-2.5 px-3 text-center font-semibold">{item.prescription.os.pd}</td>
+                          <td className="py-2.5 px-3 text-center font-semibold">{item.prescription.os.oc}</td>
+                        </tr>
+                        <tr>
+                          <td className="py-2.5 px-3">
+                            <div className="bg-muted rounded py-1.5 px-2 text-center">
+                              <span className="text-xs font-medium">OD (Right Eye)</span>
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3 text-center font-semibold text-primary">{item.prescription.od.sph}</td>
+                          <td className="py-2.5 px-3 text-center font-semibold">{item.prescription.od.cyl}</td>
+                          <td className="py-2.5 px-3 text-center font-semibold">{item.prescription.od.axis}</td>
+                          <td className="py-2.5 px-3 text-center font-semibold">{item.prescription.od.pd}</td>
+                          <td className="py-2.5 px-3 text-center font-semibold">{item.prescription.od.oc}</td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
 
                   {/* Attached Files */}
                   {item.attachments.length > 0 && (
-                    <div className="mt-6">
-                      <div className="flex items-center gap-2 mb-3">
-                        <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Attached Files</span>
+                    <div className="mt-3">
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <FolderOpen className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="text-xs font-medium">Attached Files</span>
+                        <Badge variant="secondary" className="text-[10px] ml-1 px-1.5 py-0">{item.attachments.length}</Badge>
                       </div>
-                      <div className="grid grid-cols-4 gap-3">
+                      <div className="grid grid-cols-2 gap-2">
                         {item.attachments.map((file) => (
                           <button
                             key={file.id}
                             onClick={() => file.type === "image" && setSelectedImage(file.url)}
-                            className="flex items-center gap-2 p-3 border rounded-lg hover:bg-muted/50 transition-colors text-left"
+                            className="flex items-center gap-2.5 p-2.5 border rounded-md hover:bg-muted/50 hover:border-primary/30 transition-all text-left group"
                           >
-                            {file.type === "image" ? (
-                              <ImageIcon className="h-5 w-5 text-blue-500" />
-                            ) : (
-                              <FileText className="h-5 w-5 text-red-500" />
-                            )}
-                            <span className="text-sm truncate">{file.name}</span>
+                            <div className={`h-8 w-8 rounded flex items-center justify-center shrink-0 ${
+                              file.type === "image" ? "bg-blue-50" : "bg-red-50"
+                            }`}>
+                              {file.type === "image" ? (
+                                <ImageIcon className="h-4 w-4 text-blue-500" />
+                              ) : (
+                                <FileText className="h-4 w-4 text-red-500" />
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <span className="text-xs font-medium truncate block group-hover:text-primary transition-colors">{file.name}</span>
+                              <span className="text-[10px] text-muted-foreground">{file.type === "image" ? "Image File" : "PDF Document"}</span>
+                            </div>
+                            <Eye className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                           </button>
                         ))}
                       </div>
@@ -549,48 +550,48 @@ export default function WorkDetailPage({
                 </TabsContent>
 
                 {/* Additional Details Tab */}
-                <TabsContent value="additional" className="mt-6 space-y-6">
+                <TabsContent value="additional" className="mt-3 space-y-3">
                   {/* Customer Info */}
                   <div>
-                    <h3 className="font-semibold mb-4">Customer Info</h3>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-[100px_1fr] gap-4 items-center">
-                        <Label className="text-sm font-medium">Name</Label>
-                        <Input value={item.customer.name} disabled className="bg-muted/50" />
+                    <h3 className="font-bold text-sm mb-3">Customer Info</h3>
+                    <div className="space-y-1.5">
+                      <div className="grid grid-cols-[80px_1fr] gap-3 items-center">
+                        <Label className="text-xs font-bold text-foreground">Name</Label>
+                        <Input value={item.customer.name} disabled className="bg-transparent border-0 border-b border-border rounded-none shadow-none h-6 text-[9px] font-normal text-muted-foreground px-1" />
                       </div>
-                      <div className="grid grid-cols-[100px_1fr] gap-4 items-center">
-                        <Label className="text-sm font-medium">Phone</Label>
-                        <Input value={item.customer.phone} disabled className="bg-muted/50" />
+                      <div className="grid grid-cols-[80px_1fr] gap-3 items-center">
+                        <Label className="text-xs font-bold text-foreground">Phone</Label>
+                        <Input value={item.customer.phone} disabled className="bg-transparent border-0 border-b border-border rounded-none shadow-none h-6 text-[9px] font-normal text-muted-foreground px-1" />
                       </div>
-                      <div className="grid grid-cols-[100px_1fr] gap-4 items-center">
-                        <Label className="text-sm font-medium">Email</Label>
-                        <Input value={item.customer.email} disabled className="bg-muted/50" />
+                      <div className="grid grid-cols-[80px_1fr] gap-3 items-center">
+                        <Label className="text-xs font-bold text-foreground">Email</Label>
+                        <Input value={item.customer.email} disabled className="bg-transparent border-0 border-b border-border rounded-none shadow-none h-6 text-[9px] font-normal text-muted-foreground px-1" />
                       </div>
 
                       {/* Address Section */}
-                      <div className="grid grid-cols-[100px_1fr] gap-4 items-start">
-                        <Label className="text-sm font-medium pt-2">Address</Label>
-                        <div className="space-y-3">
+                      <div className="grid grid-cols-[80px_1fr] gap-3 items-start">
+                        <Label className="text-xs font-bold text-foreground pt-1.5">Address</Label>
+                        <div className="space-y-1.5">
                           {/* Shipping Type Toggle */}
-                          <div className="flex gap-3">
+                          <div className="flex gap-2">
                             <button
                               onClick={() => isEditable && setShippingType("address")}
                               disabled={!isEditable}
-                              className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-medium transition-colors ${
                                 shippingType === "address"
                                   ? "bg-[oklch(0.97_0.08_85)] border-[oklch(0.7_0.15_55)] text-[oklch(0.5_0.15_55)]"
                                   : "bg-background border-border text-muted-foreground"
                               } ${!isEditable ? "opacity-60 cursor-not-allowed" : ""}`}
                             >
                               <div
-                                className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                                className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${
                                   shippingType === "address"
                                     ? "border-[oklch(0.7_0.15_55)]"
                                     : "border-muted-foreground"
                                 }`}
                               >
                                 {shippingType === "address" && (
-                                  <div className="w-2 h-2 rounded-full bg-[oklch(0.7_0.15_55)]" />
+                                  <div className="w-1.5 h-1.5 rounded-full bg-[oklch(0.7_0.15_55)]" />
                                 )}
                               </div>
                               Ship to Address
@@ -598,21 +599,21 @@ export default function WorkDetailPage({
                             <button
                               onClick={() => isEditable && setShippingType("store")}
                               disabled={!isEditable}
-                              className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-medium transition-colors ${
                                 shippingType === "store"
                                   ? "bg-[oklch(0.97_0.08_85)] border-[oklch(0.7_0.15_55)] text-[oklch(0.5_0.15_55)]"
                                   : "bg-background border-border text-muted-foreground"
                               } ${!isEditable ? "opacity-60 cursor-not-allowed" : ""}`}
                             >
                               <div
-                                className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                                className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${
                                   shippingType === "store"
                                     ? "border-[oklch(0.7_0.15_55)]"
                                     : "border-muted-foreground"
                                 }`}
                               >
                                 {shippingType === "store" && (
-                                  <div className="w-2 h-2 rounded-full bg-[oklch(0.7_0.15_55)]" />
+                                  <div className="w-1.5 h-1.5 rounded-full bg-[oklch(0.7_0.15_55)]" />
                                 )}
                               </div>
                               Ship to Store
@@ -625,41 +626,41 @@ export default function WorkDetailPage({
                             onChange={(e) => setAddress1(e.target.value)}
                             placeholder="Address Line 1"
                             disabled={!isEditable}
-                            className={!isEditable ? "opacity-60" : ""}
+                            className={`h-6 text-[9px] font-normal text-muted-foreground ${!isEditable ? "opacity-60" : ""}`}
                           />
                           <Input
                             value={address2}
                             onChange={(e) => setAddress2(e.target.value)}
                             placeholder="Address Line 2"
                             disabled={!isEditable}
-                            className={!isEditable ? "opacity-60" : ""}
+                            className={`h-6 text-[9px] font-normal text-muted-foreground ${!isEditable ? "opacity-60" : ""}`}
                           />
-                          <div className="grid grid-cols-3 gap-3">
+                          <div className="grid grid-cols-3 gap-2">
                             <div>
-                              <span className="text-xs text-muted-foreground block mb-1">CITY</span>
+                              <span className="text-[10px] font-bold text-muted-foreground/70 uppercase block mb-0.5">City</span>
                               <Input
                                 value={city}
                                 onChange={(e) => setCity(e.target.value)}
                                 disabled={!isEditable}
-                                className={!isEditable ? "opacity-60" : ""}
+                                className={`h-6 text-[9px] font-normal text-muted-foreground ${!isEditable ? "opacity-60" : ""}`}
                               />
                             </div>
                             <div>
-                              <span className="text-xs text-muted-foreground block mb-1">STATE</span>
+                              <span className="text-[10px] font-bold text-muted-foreground/70 uppercase block mb-0.5">State</span>
                               <Input
                                 value={state}
                                 onChange={(e) => setState(e.target.value)}
                                 disabled={!isEditable}
-                                className={!isEditable ? "opacity-60" : ""}
+                                className={`h-6 text-[9px] font-normal text-muted-foreground ${!isEditable ? "opacity-60" : ""}`}
                               />
                             </div>
                             <div>
-                              <span className="text-xs text-muted-foreground block mb-1">ZIP</span>
+                              <span className="text-[10px] font-bold text-muted-foreground/70 uppercase block mb-0.5">Zip</span>
                               <Input
                                 value={zip}
                                 onChange={(e) => setZip(e.target.value)}
                                 disabled={!isEditable}
-                                className={!isEditable ? "opacity-60" : ""}
+                                className={`h-6 text-[9px] font-normal text-muted-foreground ${!isEditable ? "opacity-60" : ""}`}
                               />
                             </div>
                           </div>
@@ -668,18 +669,21 @@ export default function WorkDetailPage({
                     </div>
                   </div>
 
+                  {/* Divider */}
+                  <div className="border-t border-border mt-4 mb-3" />
+
                   {/* Consent & Agreement Policy */}
                   <div>
-                    <div className="flex items-center gap-2 mb-4">
-                      <Check className="h-4 w-4 text-[oklch(0.7_0.15_55)]" />
-                      <h3 className="font-semibold text-[oklch(0.7_0.15_55)]">Consent & Agreement Policy</h3>
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Check className="h-3.5 w-3.5 text-[oklch(0.7_0.15_55)]" />
+                      <h3 className="font-bold text-sm text-[oklch(0.7_0.15_55)]">Consent & Agreement Policy</h3>
                     </div>
 
-                    <div className="space-y-4">
-                      <div className="border border-[oklch(0.85_0.15_85)] rounded-lg p-4 bg-[oklch(0.99_0.01_85)]">
-                        <div className="flex items-center gap-3">
+                    <div className="space-y-2">
+                      <div className="border border-[oklch(0.85_0.15_85)] rounded-md p-2.5 bg-[oklch(0.99_0.01_85)]">
+                        <div className="flex items-center gap-2">
                           <Checkbox checked={item.consent.prescriptionPolicy} disabled />
-                          <span className="text-sm">
+                          <span className="text-xs">
                             I have read and agree to the{" "}
                             <span className="text-[oklch(0.7_0.15_55)] underline">
                               Consent & Agreement Policy
@@ -689,29 +693,29 @@ export default function WorkDetailPage({
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3 pl-1">
+                      <div className="flex items-center gap-2 pl-1">
                         <Checkbox checked={item.consent.hipaaAuthorization} disabled />
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-xs text-muted-foreground">
                           I authorize the use and disclosure of my health information as described in the HIPAA Authorization.
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-3 pl-1">
+                      <div className="flex items-center gap-2 pl-1">
                         <Checkbox checked={item.consent.marketingCommunications} disabled />
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-xs text-muted-foreground">
                           I agree to receive marketing communications.
                         </span>
                       </div>
 
                       {/* Signature */}
-                      <div className="mt-6">
-                        <div className="flex items-center gap-4 mb-3">
+                      <div className="mt-3">
+                        <div className="flex items-center gap-3 mb-2">
                           <div className="flex-1 h-px bg-border" />
-                          <span className="text-sm text-muted-foreground">Signature</span>
+                          <span className="text-xs text-muted-foreground">Signature</span>
                           <div className="flex-1 h-px bg-border" />
                         </div>
-                        <div className="border-2 border-dashed border-muted rounded-lg p-8 text-center">
-                          <span className="text-sm text-muted-foreground">
+                        <div className="border-2 border-dashed border-muted rounded-md p-4 text-center">
+                          <span className="text-xs text-muted-foreground">
                             {item.consent.signature ? "Signature on file" : "Agree to the policy to Sign."}
                           </span>
                         </div>
@@ -719,16 +723,16 @@ export default function WorkDetailPage({
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex items-center justify-between mt-6 pt-4 border-t">
-                      <div className="flex gap-2">
-                        <Button variant="outline" className="bg-transparent">
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t">
+                      <div className="flex gap-1.5">
+                        <Button variant="outline" size="sm" className="bg-transparent h-7 text-xs">
                           Back
                         </Button>
-                        <Button variant="outline" className="bg-transparent">
+                        <Button variant="outline" size="sm" className="bg-transparent h-7 text-xs">
                           Clear
                         </Button>
                       </div>
-                      <Button disabled className="bg-muted text-muted-foreground">
+                      <Button disabled size="sm" className="bg-muted text-muted-foreground h-7 text-xs">
                         Save
                       </Button>
                     </div>
@@ -736,52 +740,52 @@ export default function WorkDetailPage({
                 </TabsContent>
 
                 {/* Comment Tab */}
-                <TabsContent value="comment" className="mt-6 space-y-4">
+                <TabsContent value="comment" className="mt-3 space-y-3">
                   {/* Add Comment */}
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     <textarea
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
                       placeholder="Enter your comment..."
-                      className="w-full min-h-[100px] p-3 border border-input rounded-lg text-sm bg-background resize-none"
+                      className="w-full min-h-[70px] p-2.5 border border-input rounded-md text-xs bg-background resize-none"
                     />
                     <div className="flex justify-end">
-                      <Button onClick={handleAddComment} className="gap-2">
-                        <Plus className="h-4 w-4" />
+                      <Button onClick={handleAddComment} size="sm" className="gap-1.5 h-7 text-xs">
+                        <Plus className="h-3.5 w-3.5" />
                         Add Comment
                       </Button>
                     </div>
                   </div>
 
                   {/* Comments List */}
-                  <div className="space-y-3 mt-6">
+                  <div className="space-y-2 mt-3">
                     {comments.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
+                      <div className="text-center py-4 text-xs text-muted-foreground">
                         No comments yet
                       </div>
                     ) : (
                       comments.map((comment) => (
                         <div
                           key={comment.id}
-                          className="border rounded-lg p-4 bg-muted/30"
+                          className="border rounded-md p-2.5 bg-muted/30"
                         >
-                          <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-start justify-between gap-3">
                             <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <span className="font-medium text-sm">{comment.author}</span>
-                                <span className="text-xs text-muted-foreground">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-medium text-xs">{comment.author}</span>
+                                <span className="text-[10px] text-muted-foreground">
                                   {comment.createdAt}
                                 </span>
                               </div>
-                              <p className="text-sm">{comment.content}</p>
+                              <p className="text-xs">{comment.content}</p>
                             </div>
                             <Button
                               variant="ghost"
                               size="icon"
                               onClick={() => handleDeleteComment(comment.id)}
-                              className="text-muted-foreground hover:text-destructive h-8 w-8"
+                              className="text-muted-foreground hover:text-destructive h-6 w-6"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </div>
                         </div>
@@ -793,20 +797,20 @@ export default function WorkDetailPage({
             </div>
 
             {/* Right Column - Sidebar (1 column) */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               {/* Work Status Management Card */}
               <Card>
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-base font-semibold">Work Status Management</CardTitle>
+                <CardHeader className="pb-2 pt-3 px-4">
+                  <CardTitle className="text-sm font-semibold">Work Status Management</CardTitle>
                   {!isEditable && (
-                    <p className="text-xs text-muted-foreground">Status is {item.status}. Editing is disabled.</p>
+                    <p className="text-[10px] text-muted-foreground">Status is {item.status}. Editing is disabled.</p>
                   )}
                 </CardHeader>
-                <CardContent className="space-y-5 text-sm">
-                  <div className="flex items-center justify-between gap-4">
+                <CardContent className="space-y-3 text-xs px-4 pb-3">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-muted-foreground font-bold shrink-0">Work Status</span>
                     <Select value={workStatus} onValueChange={setWorkStatus} disabled={!isEditable}>
-                      <SelectTrigger className={`w-[180px] h-9 ${!isEditable ? "opacity-60 cursor-not-allowed" : ""}`}>
+                      <SelectTrigger className={`w-[150px] h-7 text-xs ${!isEditable ? "opacity-60 cursor-not-allowed" : ""}`}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -817,10 +821,10 @@ export default function WorkDetailPage({
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-muted-foreground font-bold shrink-0">Work Type</span>
                     <Select value={workType} onValueChange={setWorkType} disabled={!isEditable}>
-                      <SelectTrigger className={`w-[180px] h-9 ${!isEditable ? "opacity-60 cursor-not-allowed" : ""}`}>
+                      <SelectTrigger className={`w-[150px] h-7 text-xs ${!isEditable ? "opacity-60 cursor-not-allowed" : ""}`}>
                         <SelectValue placeholder="-" />
                       </SelectTrigger>
                       <SelectContent>
@@ -830,10 +834,10 @@ export default function WorkDetailPage({
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="text-muted-foreground font-bold shrink-0">Work Processing Period</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-muted-foreground font-bold shrink-0">Processing Period</span>
                     <Select value={processingPeriod} onValueChange={setProcessingPeriod} disabled={!isEditable}>
-                      <SelectTrigger className={`w-[180px] h-9 ${!isEditable ? "opacity-60 cursor-not-allowed" : ""}`}>
+                      <SelectTrigger className={`w-[150px] h-7 text-xs ${!isEditable ? "opacity-60 cursor-not-allowed" : ""}`}>
                         <SelectValue placeholder="-" />
                       </SelectTrigger>
                       <SelectContent>
@@ -848,30 +852,49 @@ export default function WorkDetailPage({
                 </CardContent>
               </Card>
 
+              {/* Save Button */}
+              <div className="pt-1">
+                <Button
+                  onClick={handleSave}
+                  size="sm"
+                  disabled={!hasChanges || !isEditable}
+                  className={`w-full h-8 text-xs ${
+                    hasChanges && isEditable
+                      ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                      : "bg-muted text-muted-foreground cursor-not-allowed"
+                  }`}
+                >
+                  Save
+                </Button>
+              </div>
+
+              {/* Spacer */}
+              <div className="pt-4" />
+
               {/* Delivery Tracking Card */}
               <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
+                <CardHeader className="pb-2 pt-3 px-4">
+                  <CardTitle className="text-sm flex items-center gap-1.5">
                     Delivery Tracking
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                          <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>This is information regarding the shipments received by the lab.</p>
+                          <p className="text-xs">This is information regarding the shipments received by the lab.</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between text-sm">
+                <CardContent className="px-4 pb-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs">
                       <span className="text-muted-foreground font-bold">Shipment Label No.</span>
                       <span className="font-medium">{item.inboundTracking?.trackingNo || "-"}</span>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center justify-between text-xs">
                       <span className="text-muted-foreground font-bold">Carrier</span>
                       <span className="font-medium">{item.inboundTracking?.carrier || "-"}</span>
                     </div>
@@ -882,121 +905,94 @@ export default function WorkDetailPage({
                         const trackingUrl = `https://www.fedex.com/fedextrack/?trknbr=${item.inboundTracking?.trackingNo}`
                         window.open(trackingUrl, "_blank")
                       }}
-                      className="w-full flex items-center justify-between p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors text-left group mt-3"
+                      className="w-full flex items-center justify-between p-2 rounded-md border bg-muted/30 hover:bg-muted/50 transition-colors text-left group mt-2"
                     >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <Badge variant="outline" className="shrink-0 text-xs">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Badge variant="outline" className="shrink-0 text-[10px]">
                           {item.inboundTracking.carrier}
                         </Badge>
-                        <code className="text-xs font-mono truncate">
+                        <code className="text-[10px] font-mono truncate">
                           {item.inboundTracking.trackingNo}
                         </code>
                       </div>
-                      <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-foreground shrink-0 ml-2" />
+                      <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground shrink-0 ml-2" />
                     </button>
                   )}
                 </CardContent>
               </Card>
 
-{/* Detail History Card */}
-  <Card>
-  <CardHeader className="pb-3">
-  <CardTitle className="text-base">Detail History</CardTitle>
-  </CardHeader>
-  <CardContent>
-  <div className="max-h-[300px] overflow-y-auto pr-2">
-  <div className="space-y-4">
-  {/* Example: Multiple changes in one save */}
-  <div className="flex gap-3">
-  <div className="flex flex-col items-center">
-  <div className="h-2 w-2 rounded-full bg-[oklch(0.7_0.15_55)] mt-1.5" />
-  <div className="w-px flex-1 bg-border" />
-  </div>
-  <div className="pb-4 flex-1">
-  <div className="flex items-center justify-between mb-2">
-  <p className="text-xs text-muted-foreground">
-  2026. 03.10 14:30 (PST)
-  </p>
-  <p className="text-xs text-muted-foreground">By: monster1437</p>
-  </div>
-  <div className="space-y-2">
-  <div className="flex items-start gap-2">
-  <Badge variant="outline" className="text-xs shrink-0 bg-blue-50 text-blue-700 border-blue-200">Status</Badge>
-  <span className="text-sm">Pending → In Progress</span>
-  </div>
-  <div className="flex items-start gap-2">
-  <Badge variant="outline" className="text-xs shrink-0 bg-purple-50 text-purple-700 border-purple-200">Type</Badge>
-  <span className="text-sm">- → INHOUSE</span>
-  </div>
-  <div className="flex items-start gap-2">
-  <Badge variant="outline" className="text-xs shrink-0 bg-green-50 text-green-700 border-green-200">Period</Badge>
-  <span className="text-sm">- → (Basic) IIC Lab</span>
-  </div>
-  </div>
-  </div>
-  </div>
+              {/* Detail History Card */}
+              <Card>
+                <CardHeader className="pb-2 pt-3 px-4">
+                  <CardTitle className="text-sm">Detail History</CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-3">
+                  <div className="max-h-[220px] overflow-y-auto pr-1">
+                    <div className="space-y-3">
+                      {/* Multiple changes in one save */}
+                      <div className="flex gap-2">
+                        <div className="flex flex-col items-center">
+                          <div className="h-1.5 w-1.5 rounded-full bg-[oklch(0.7_0.15_55)] mt-1.5" />
+                          <div className="w-px flex-1 bg-border" />
+                        </div>
+                        <div className="pb-3 flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-[10px] text-muted-foreground">2026. 03.10 14:30 (PST)</p>
+                            <p className="text-[10px] text-muted-foreground">monster1437</p>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="flex items-start gap-1.5">
+                              <Badge variant="outline" className="text-[10px] shrink-0 bg-blue-50 text-blue-700 border-blue-200 px-1.5 py-0">Status</Badge>
+                              <span className="text-xs">Pending → In Progress</span>
+                            </div>
+                            <div className="flex items-start gap-1.5">
+                              <Badge variant="outline" className="text-[10px] shrink-0 bg-purple-50 text-purple-700 border-purple-200 px-1.5 py-0">Type</Badge>
+                              <span className="text-xs">- → INHOUSE</span>
+                            </div>
+                            <div className="flex items-start gap-1.5">
+                              <Badge variant="outline" className="text-[10px] shrink-0 bg-green-50 text-green-700 border-green-200 px-1.5 py-0">Period</Badge>
+                              <span className="text-xs">- → (Basic) IIC Lab</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
 
-  {/* Example: Customer Info change (offline only) */}
-  <div className="flex gap-3">
-  <div className="flex flex-col items-center">
-  <div className="h-2 w-2 rounded-full bg-[oklch(0.7_0.15_55)] mt-1.5" />
-  <div className="w-px flex-1 bg-border" />
-  </div>
-  <div className="pb-4 flex-1">
-  <div className="flex items-center justify-between mb-2">
-  <p className="text-xs text-muted-foreground">
-  2026. 03.09 16:00 (PST)
-  </p>
-  <p className="text-xs text-muted-foreground">By: monster1437</p>
-  </div>
-  <div className="space-y-2">
-  <div className="flex items-start gap-2">
-  <Badge variant="outline" className="text-xs shrink-0 bg-orange-50 text-orange-700 border-orange-200">Customer Info</Badge>
-  <span className="text-sm">Address1, City</span>
-  </div>
-  </div>
-  </div>
-  </div>
+                      {/* Customer Info change */}
+                      <div className="flex gap-2">
+                        <div className="flex flex-col items-center">
+                          <div className="h-1.5 w-1.5 rounded-full bg-[oklch(0.7_0.15_55)] mt-1.5" />
+                          <div className="w-px flex-1 bg-border" />
+                        </div>
+                        <div className="pb-3 flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-[10px] text-muted-foreground">2026. 03.09 16:00 (PST)</p>
+                            <p className="text-[10px] text-muted-foreground">monster1437</p>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="flex items-start gap-1.5">
+                              <Badge variant="outline" className="text-[10px] shrink-0 bg-orange-50 text-orange-700 border-orange-200 px-1.5 py-0">Customer Info</Badge>
+                              <span className="text-xs">Address1, City</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-  {/* Initial status */}
-  <div className="flex gap-3">
-  <div className="flex flex-col items-center">
-  <div className="h-2 w-2 rounded-full bg-[oklch(0.7_0.15_55)] mt-1.5" />
-  </div>
-  <div className="pb-2 flex-1">
-  <div className="flex items-center justify-between mb-2">
-  <p className="text-xs text-muted-foreground">
-  2026. 03.09 11:00 (PST)
-  </p>
-  <p className="text-xs text-muted-foreground">By: monster1437</p>
-  </div>
-  <div className="space-y-2">
-  <div className="flex items-start gap-2">
-  <Badge variant="outline" className="text-xs shrink-0 bg-blue-50 text-blue-700 border-blue-200">Status</Badge>
-  <span className="text-sm">Pending (Initial)</span>
-  </div>
-  </div>
-  </div>
-  </div>
-  </div>
-  </div>
-  </CardContent>
-  </Card>
-
-              {/* Save Button - Final save for all detail changes */}
-              <div className="pt-4">
-                <Button 
-                  onClick={handleSave}
-                  disabled={!hasChanges || !isEditable}
-                  className={`w-full ${
-                    hasChanges && isEditable
-                      ? "bg-primary hover:bg-primary/90 text-primary-foreground" 
-                      : "bg-muted text-muted-foreground cursor-not-allowed"
-                  }`}
+              {/* 작업 취소 */}
+              <div className="flex justify-end mt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-6 text-[10px] px-2 text-muted-foreground/50 border-muted-foreground/20 hover:text-muted-foreground/50 hover:bg-transparent cursor-default"
+                  onClick={() => {}}
                 >
-                  Save
+                  Cancel Work
                 </Button>
               </div>
+
             </div>
           </div>
         </main>
