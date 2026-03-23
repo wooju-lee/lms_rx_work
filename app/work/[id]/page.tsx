@@ -11,6 +11,8 @@ import {
   FileText,
   Printer,
   Truck,
+  MapPin,
+  Store,
   ExternalLink,
   Image as ImageIcon,
   FolderOpen,
@@ -57,81 +59,136 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
+// Replicate list page data generation to keep detail in sync
+const getListItemData = (numId: number) => {
+  const statuses = ["Pending", "Inspection", "In Progress", "Completed", "Finalized"]
+  const channels = ["Online", "Offline"]
+  const stores = [
+    { code: "US1001", name: "US_STORE_1" },
+    { code: "US1002", name: "US_STORE_2" },
+    { code: "US1003", name: "US_STORE_3" },
+    { code: "US1004", name: "US_ONLINE" },
+  ]
+  const workTypes = ["IN HOUSE", "OUTSOURCED"]
+  const assignees = ["sam_01", "sam_02", "monster1437"]
+  const preOrderIds = [3, 8, 14, 21, 27]
+
+  // Processing period mapping: same iteration order as list page
+  const processingPeriods = [
+    { period: "(Basic) IIC Lab", range: [1, 7] },
+    { period: "(Basic) Lab 1", range: [8, 12] },
+    { period: "(Basic) Lab 2", range: [13, 15] },
+    { period: "(Tint) IIC Lab", range: [16, 24] },
+    { period: "(Tint) Lab 1", range: [25, 28] },
+    { period: "(Tint) Lab 2", range: [29, 30] },
+  ]
+
+  const store = stores[numId % stores.length]
+  const status = statuses[numId % statuses.length]
+  const channel = channels[numId % channels.length]
+  const orderType = preOrderIds.includes(numId) ? "Pre-order" : "Normal"
+  const period = processingPeriods.find(p => numId >= p.range[0] && numId <= p.range[1])?.period || "-"
+
+  return { status, channel, store, workType: workTypes[numId % workTypes.length], assignee: assignees[numId % assignees.length], orderType, period }
+}
+
 // Sample data - in real app, this would come from API
-const getWorkItem = (id: string) => ({
-  id,
-  orderDate: "2025-12-01 15:00",
-  orderNumber: "606069096005",
-  channel: "Online" as const,
-  storeCode: "US1004",
-  storeName: "US_Online",
-  status: "Pending" as const,
-  workType: "-",
-  processingPeriod: "-",
-  assignee: null,
-  country: "US",
-  membership: {
-    email: "***********@naver.com",
-    phone: "010-****-2222",
-    provider: "google",
-    joinDate: "2026. 12. 31",
-    isActive: true,
-  },
-  products: [
-    {
-      type: "OPTICAL ACETATE",
-      typeColor: "bg-[oklch(0.92_0.12_85)]",
-      productInfo: "11000003 | DAY-01 OPT | 8809639023860",
-      mappedProduct: "-",
-      qty: 1,
-      totalPrice: 560,
-      cof: false,
+const getWorkItem = (id: string) => {
+  const numId = Number(id)
+  const listData = getListItemData(numId)
+
+  // Map list "Inspection" to detail "Inbound Inspection"
+  const statusMap: Record<string, string> = {
+    "Inspection": "Inbound Inspection",
+  }
+  const status = statusMap[listData.status] || listData.status
+  const isCompleted = status === "Completed" || status === "Finalized"
+
+  return {
+    id,
+    orderDate: `2025-08-${String(10 + (numId % 20)).padStart(2, "0")} ${10 + (numId % 12)}:00 (PST)`,
+    orderNumber: `6060606060${String(60000 + numId).padStart(5, "0")}`,
+    orderType: listData.orderType,
+    launchDate: listData.orderType === "Pre-order" ? "2026-01-15 10:00" : undefined,
+    channel: listData.channel as "Online" | "Offline",
+    storeCode: listData.store.code,
+    storeName: listData.store.name,
+    status: status,
+    workType: listData.workType,
+    processingPeriod: listData.period,
+    assignee: listData.assignee,
+    country: "US",
+    membership: {
+      email: "***********@naver.com",
+      phone: "010-****-2222",
+      provider: "google",
+      expDate: "2026. 12. 31",
+      isActive: true,
     },
-    {
-      type: "LENS",
-      typeColor: "bg-[oklch(0.92_0.12_85)]",
-      productInfo: "14000223 | PL-167-AR | -",
-      mappedProduct: "11000003 | DAY-01 OPT | 8809639023860",
-      qty: 1,
-      totalPrice: 500,
-      cof: false,
+    products: [
+      {
+        type: "OPTICAL ACETATE",
+        typeColor: "bg-[oklch(0.92_0.12_85)]",
+        productInfo: "11000003 | DAY-01 OPT | 8809639023860",
+        mappedProduct: "-",
+        qty: 1,
+        totalPrice: 560,
+        cof: false,
+      },
+      {
+        type: "LENS",
+        typeColor: "bg-[oklch(0.92_0.12_85)]",
+        productInfo: "14000223 | PL-167-AR | -",
+        mappedProduct: "11000003 | DAY-01 OPT | 8809639023860",
+        qty: 1,
+        totalPrice: 500,
+        cof: false,
+      },
+    ],
+    customer: {
+      name: "John Doe",
+      phone: "01072119843",
+      email: "landa0707@naver.com",
+      shippingType: (listData.channel === "Online" ? "address" : "store") as "address" | "store",
+      address1: "Address Address Address Address",
+      address2: "Address Address Address Address",
+      city: "New York",
+      state: "CA",
+      zip: "10001",
     },
-  ],
-  customer: {
-    name: "John Doe",
-    phone: "01072119843",
-    email: "landa0707@naver.com",
-    shippingType: "address" as const,
-    address1: "Address Address Address Address",
-    address2: "Address Address Address Address",
-    city: "New York",
-    state: "CA",
-    zip: "10001",
-  },
-  prescription: {
-    od: { sph: "+2.00", cyl: "-2.00", axis: "180", pd: "Single", oc: "-" },
-    os: { sph: "+2.00", cyl: "-2.00", axis: "180", pd: "63.0", oc: "-" },
-  },
-  attachments: [
-    { id: "1", name: "prescription_scan.jpg", type: "image", url: "/placeholder.svg?height=600&width=400" },
-    { id: "2", name: "rx_document.pdf", type: "pdf", url: "#" },
-  ],
-  consent: {
-    prescriptionPolicy: true,
-    hipaaAuthorization: true,
-    marketingCommunications: false,
-    signature: true,
-  },
-  inboundTracking: null,
-  comments: [
-    {
-      id: "1",
-      author: "sam_01",
-      content: "Prescription verified. Ready for processing.",
-      createdAt: "2026-03-09 14:30 (PST)",
+    prescription: {
+      od: { sph: "+2.00", cyl: "-2.00", axis: "180", pd: "Single", oc: "-" },
+      os: { sph: "+2.00", cyl: "-2.00", axis: "180", pd: "63.0", oc: "-" },
     },
-  ],
-})
+
+    prescriptionFiles: [
+      { id: "p1", name: "prescription_front.jpg", url: "/placeholder.svg?height=600&width=400&text=Prescription+Front" },
+      { id: "p2", name: "prescription_back.jpg", url: "/placeholder.svg?height=600&width=400&text=Prescription+Back" },
+      { id: "p3", name: "doctor_note.jpg", url: "/placeholder.svg?height=600&width=400&text=Doctor+Note" },
+    ],
+    attachments: [
+      { id: "1", name: "prescription_scan.jpg", type: "image", url: "/placeholder.svg?height=600&width=400" },
+      { id: "2", name: "rx_document.pdf", type: "pdf", url: "#" },
+    ],
+    consent: {
+      prescriptionPolicy: true,
+      hipaaAuthorization: true,
+      marketingCommunications: false,
+      signature: true,
+    },
+    inboundTracking: listData.channel === "Online" ? null : { trackingNo: "7489274892748", carrier: "FedEx" },
+    // Outbound tracking exists when outbound registration has been done (Completed/Finalized items have it)
+    outboundTracking: isCompleted ? { trackingNo: "9201774892100", carrier: "UPS" } : null,
+    comments: [
+      {
+        id: "1",
+        author: "sam_01",
+        content: "Prescription verified. Ready for processing.",
+        createdAt: "2026-03-09 14:30 (PST)",
+      },
+    ],
+  }
+}
 
 type Comment = {
   id: string
@@ -162,8 +219,26 @@ export default function WorkDetailPage({
   const [state, setState] = useState(item.customer.state)
   const [zip, setZip] = useState(item.customer.zip)
 
+  // Saved values (to track changes after save)
+  const [savedValues, setSavedValues] = useState({
+    workStatus: item.status,
+    workType: item.workType,
+    processingPeriod: item.processingPeriod,
+    shippingType: item.customer.shippingType,
+    address1: item.customer.address1,
+    address2: item.customer.address2,
+    city: item.customer.city,
+    state: item.customer.state,
+    zip: item.customer.zip,
+  })
+
   // Image viewer state
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
+
+  // Prescription view states
+  const [showPrescriptionPopup, setShowPrescriptionPopup] = useState(false)
+  const [floatingImages, setFloatingImages] = useState<{ id: string; name: string; url: string; x: number; y: number }[]>([])
+  const [dragging, setDragging] = useState<{ id: string; offsetX: number; offsetY: number } | null>(null)
 
   // Comments state
   const [comments, setComments] = useState<Comment[]>(item.comments)
@@ -178,18 +253,19 @@ export default function WorkDetailPage({
   // Label Print is only enabled when outbound registration is completed (Outbound Inspection status)
   const isLabelPrintEnabled = workStatus === "Outbound Inspection"
 
-  // Track if any changes have been made
-  const hasChanges = 
-    workStatus !== item.status ||
-    workType !== item.workType ||
-    processingPeriod !== item.processingPeriod ||
-    shippingType !== item.customer.shippingType ||
-    address1 !== item.customer.address1 ||
-    address2 !== item.customer.address2 ||
-    city !== item.customer.city ||
-    state !== item.customer.state ||
-    zip !== item.customer.zip ||
-    shipmentLabelNo !== ""
+  // Track if any changes have been made (compared to last saved values)
+  const hasChanges =
+    workStatus !== savedValues.workStatus ||
+    workType !== savedValues.workType ||
+    processingPeriod !== savedValues.processingPeriod ||
+    shippingType !== savedValues.shippingType ||
+    address1 !== savedValues.address1 ||
+    address2 !== savedValues.address2 ||
+    city !== savedValues.city ||
+    state !== savedValues.state ||
+    zip !== savedValues.zip
+
+  const [saveSuccess, setSaveSuccess] = useState(false)
 
   const handleSave = () => {
     // Save all changes - in real app, this would call API
@@ -203,8 +279,23 @@ export default function WorkDetailPage({
       city,
       state,
       zip,
-      shipmentLabelNo,
     })
+
+    // Update saved values to reflect current state
+    setSavedValues({
+      workStatus,
+      workType,
+      processingPeriod,
+      shippingType,
+      address1,
+      address2,
+      city,
+      state,
+      zip,
+    })
+
+    setSaveSuccess(true)
+    setTimeout(() => setSaveSuccess(false), 2000)
   }
 
   const handleWorkPrint = () => {
@@ -242,12 +333,55 @@ export default function WorkDetailPage({
     setComments(comments.filter((c) => c.id !== commentId))
   }
 
+  const handlePrescriptionView = () => {
+    if (item.prescriptionFiles.length === 1) {
+      // Only 1 file - open floating directly
+      const file = item.prescriptionFiles[0]
+      if (!floatingImages.find((f) => f.id === file.id)) {
+        setFloatingImages([...floatingImages, { ...file, x: 100, y: 100 }])
+      }
+    } else {
+      setShowPrescriptionPopup(true)
+    }
+  }
+
+  const handleSelectPrescriptionFile = (file: { id: string; name: string; url: string }) => {
+    if (!floatingImages.find((f) => f.id === file.id)) {
+      const offset = floatingImages.length * 30
+      setFloatingImages([...floatingImages, { ...file, x: 100 + offset, y: 100 + offset }])
+    }
+    setShowPrescriptionPopup(false)
+  }
+
+  const handleCloseFloatingImage = (id: string) => {
+    setFloatingImages(floatingImages.filter((f) => f.id !== id))
+  }
+
+  const handleMouseDown = (e: React.MouseEvent, id: string) => {
+    const img = floatingImages.find((f) => f.id === id)
+    if (!img) return
+    setDragging({ id, offsetX: e.clientX - img.x, offsetY: e.clientY - img.y })
+  }
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!dragging) return
+    setFloatingImages(floatingImages.map((f) =>
+      f.id === dragging.id ? { ...f, x: e.clientX - dragging.offsetX, y: e.clientY - dragging.offsetY } : f
+    ))
+  }
+
+  const handleMouseUp = () => {
+    setDragging(null)
+  }
+
   const getStatusBadge = (status: string) => {
     const statusStyles: Record<string, string> = {
       Pending:
         "bg-[oklch(0.92_0.12_85)] text-[oklch(0.45_0.12_70)] border-[oklch(0.85_0.15_85)]",
-      Inspection: "bg-[oklch(0.75_0.16_55)] text-white border-transparent",
+      "Inbound Inspection": "bg-[oklch(0.75_0.16_55)] text-white border-transparent",
       "In Progress": "bg-[oklch(0.7_0.15_145)] text-white border-transparent",
+      "Outbound Inspection": "bg-indigo-500 text-white border-transparent",
+      Completed: "bg-blue-100 text-blue-700 border-blue-300",
       Finalized:
         "bg-transparent text-[oklch(0.5_0.12_145)] border-[oklch(0.7_0.15_145)]",
     }
@@ -286,8 +420,12 @@ export default function WorkDetailPage({
               <div className="flex items-center gap-2">
                 <h1 className="text-base font-bold">{item.orderNumber}</h1>
                 {getStatusBadge(item.status)}
-                <Badge variant="outline" className="px-2 py-0.5 text-xs text-green-600 border-green-600">
-                  Online
+                <Badge variant="outline" className={`px-3 py-1 font-medium ${
+                  item.channel === "Online"
+                    ? "text-green-600 border-green-600"
+                    : "text-blue-600 border-blue-600"
+                }`}>
+                  {item.channel}
                 </Badge>
               </div>
 
@@ -341,7 +479,7 @@ export default function WorkDetailPage({
 
           <div className="grid grid-cols-4 gap-4">
             {/* Left Column - Main Content (3 columns) */}
-            <div className="col-span-3 space-y-3">
+            <div className="col-span-3 space-y-6">
               {/* Member Info Card */}
               <Card>
                 <CardHeader className="pb-1 pt-2.5 px-3">
@@ -352,30 +490,76 @@ export default function WorkDetailPage({
                     <span className="text-muted-foreground text-[10px]">Country</span>
                     <span className="font-medium">{item.country}</span>
                   </div>
-                  <div className="border rounded p-2">
+                  <div className="border rounded p-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-[11px]">{item.membership.email}</p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {item.membership.phone} · {item.membership.provider} · {item.membership.joinDate}
+                        <p className="font-medium text-xs">{item.membership.email}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {item.channel === "Online"
+                            ? item.membership.provider
+                            : `${item.membership.phone} · ${item.membership.provider}`
+                          }
                         </p>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        {item.membership.isActive && (
-                          <Badge className="bg-green-100 text-green-700 hover:bg-green-100 text-[9px] px-1.5 py-0">
-                            Active
-                          </Badge>
-                        )}
+                      <div className="relative">
                         <Button
                           variant="default"
                           size="sm"
-                          className="bg-[oklch(0.7_0.15_55)] hover:bg-[oklch(0.65_0.15_55)] text-white gap-1 h-5 text-[10px] px-1.5"
+                          onClick={handlePrescriptionView}
+                          className="bg-[oklch(0.7_0.15_55)] hover:bg-[oklch(0.65_0.15_55)] text-white gap-1.5 h-7 text-xs px-3 rounded-md shadow-sm"
                         >
-                          <ImageIcon className="h-2.5 w-2.5" />
+                          <ImageIcon className="h-3.5 w-3.5" />
                           Prescription View
+                          {item.prescriptionFiles.length > 1 && (
+                            <span className="bg-white/30 text-white text-[9px] rounded-full px-1 ml-0.5">
+                              {item.prescriptionFiles.length}
+                            </span>
+                          )}
                         </Button>
+                        {/* Prescription file selection popup */}
+                        {showPrescriptionPopup && (
+                          <div className="absolute right-0 top-full mt-1 z-50 bg-white border rounded-lg shadow-lg p-2 w-[220px]">
+                            <div className="flex items-center justify-between mb-1.5 px-1">
+                              <span className="text-[11px] font-semibold">Select File</span>
+                              <button onClick={() => setShowPrescriptionPopup(false)} className="text-muted-foreground hover:text-foreground">
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                            <div className="space-y-1">
+                              {item.prescriptionFiles.map((file) => {
+                                const isOpen = floatingImages.some((f) => f.id === file.id)
+                                return (
+                                  <button
+                                    key={file.id}
+                                    onClick={() => !isOpen && handleSelectPrescriptionFile(file)}
+                                    className={`w-full flex items-center gap-2 p-1.5 rounded-md text-left transition-colors ${
+                                      isOpen ? "bg-muted/50 opacity-50 cursor-default" : "hover:bg-muted/50"
+                                    }`}
+                                  >
+                                    <div className="h-6 w-6 rounded bg-blue-50 flex items-center justify-center shrink-0">
+                                      <ImageIcon className="h-3 w-3 text-blue-500" />
+                                    </div>
+                                    <span className="text-[11px] truncate">{file.name}</span>
+                                    {isOpen && <span className="text-[9px] text-muted-foreground ml-auto shrink-0">Opened</span>}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
+                    {item.channel !== "Online" && (
+                      <div className="mt-2.5 pt-2.5 border-t border-dashed flex items-center justify-between">
+                        <span className="text-[11px] text-muted-foreground">EXP</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[11px]">{item.membership.expDate}</span>
+                          <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-green-300 text-green-600">
+                            Active
+                          </Badge>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -383,31 +567,39 @@ export default function WorkDetailPage({
               {/* Order Info Card */}
               <Card>
                 <CardHeader className="pb-1 pt-2.5 px-3">
-                  <CardTitle className="text-xs font-semibold">Order Info</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-xs font-semibold">Order Info</CardTitle>
+                    <Badge
+                      variant="outline"
+                      className={`text-[10px] px-2 py-0.5 ${
+                        item.orderType === "Pre-order"
+                          ? "border-purple-300 text-purple-600 bg-purple-50"
+                          : "border-gray-300 text-gray-600 bg-gray-50"
+                      }`}
+                    >
+                      {item.orderType}
+                    </Badge>
+                  </div>
                 </CardHeader>
                 <CardContent className="pt-0 px-3 pb-2.5">
+                  {/* Order Date & Store Info */}
+                  <div className="space-y-1 text-xs mb-2 px-1">
+                    <div className="flex items-center gap-4">
+                      <span className="text-muted-foreground">Order Date</span>
+                      <span className="font-medium">{item.orderDate}</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-muted-foreground">Store Info</span>
+                      <span className="font-medium">{item.storeCode} / {item.storeName}</span>
+                    </div>
+                    {item.orderType === "Pre-order" && item.launchDate && (
+                      <div className="flex items-center gap-4">
+                        <span className="text-purple-500">Launch Date</span>
+                        <span className="font-medium">{item.launchDate}</span>
+                      </div>
+                    )}
+                  </div>
                   {/* Products Table */}
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="text-[10px] py-1 w-[110px]">Type</TableHead>
-                        <TableHead className="text-[10px] py-1">Product Info</TableHead>
-                        <TableHead className="text-[10px] py-1">Mapped Product</TableHead>
-                        <TableHead className="text-[10px] py-1 text-center w-[40px]">Qty</TableHead>
-                        <TableHead className="text-[10px] py-1 text-right w-[70px]">Total Price</TableHead>
-                        <TableHead className="text-[10px] py-1 text-center w-[40px]">C.O.F</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {/* Order Date & Store Info row aligned with table columns */}
-                      <TableRow className="border-b-0">
-                        <TableCell className="py-1 text-[10px] text-muted-foreground" colSpan={1}>Order Date</TableCell>
-                        <TableCell className="py-1 text-[10px] font-medium">{item.orderDate}</TableCell>
-                        <TableCell className="py-1 text-[10px] text-muted-foreground">Store Info</TableCell>
-                        <TableCell className="py-1 text-[10px] font-medium" colSpan={3}>{item.storeCode} / {item.storeName}</TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -554,68 +746,48 @@ export default function WorkDetailPage({
                   {/* Customer Info */}
                   <div>
                     <h3 className="font-bold text-sm mb-3">Customer Info</h3>
-                    <div className="space-y-1.5">
-                      <div className="grid grid-cols-[80px_1fr] gap-3 items-center">
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-[80px_1fr] gap-8 items-center">
                         <Label className="text-xs font-bold text-foreground">Name</Label>
                         <Input value={item.customer.name} disabled className="bg-transparent border-0 border-b border-border rounded-none shadow-none h-6 text-[9px] font-normal text-muted-foreground px-1" />
                       </div>
-                      <div className="grid grid-cols-[80px_1fr] gap-3 items-center">
+                      <div className="grid grid-cols-[80px_1fr] gap-8 items-center">
                         <Label className="text-xs font-bold text-foreground">Phone</Label>
                         <Input value={item.customer.phone} disabled className="bg-transparent border-0 border-b border-border rounded-none shadow-none h-6 text-[9px] font-normal text-muted-foreground px-1" />
                       </div>
-                      <div className="grid grid-cols-[80px_1fr] gap-3 items-center">
+                      <div className="grid grid-cols-[80px_1fr] gap-8 items-center">
                         <Label className="text-xs font-bold text-foreground">Email</Label>
                         <Input value={item.customer.email} disabled className="bg-transparent border-0 border-b border-border rounded-none shadow-none h-6 text-[9px] font-normal text-muted-foreground px-1" />
                       </div>
 
                       {/* Address Section */}
-                      <div className="grid grid-cols-[80px_1fr] gap-3 items-start">
+                      <div className="grid grid-cols-[80px_1fr] gap-8 items-start">
                         <Label className="text-xs font-bold text-foreground pt-1.5">Address</Label>
-                        <div className="space-y-1.5">
+                        <div className="space-y-3">
                           {/* Shipping Type Toggle */}
-                          <div className="flex gap-2">
+                          <div className={`inline-flex rounded-lg bg-muted/50 p-0.5 ${!isEditable ? "opacity-60" : ""}`}>
                             <button
                               onClick={() => isEditable && setShippingType("address")}
                               disabled={!isEditable}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-medium transition-colors ${
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium transition-all ${
                                 shippingType === "address"
-                                  ? "bg-[oklch(0.97_0.08_85)] border-[oklch(0.7_0.15_55)] text-[oklch(0.5_0.15_55)]"
-                                  : "bg-background border-border text-muted-foreground"
-                              } ${!isEditable ? "opacity-60 cursor-not-allowed" : ""}`}
+                                  ? "bg-emerald-50 shadow-sm text-emerald-700 border border-emerald-200"
+                                  : "text-muted-foreground hover:text-foreground"
+                              } ${!isEditable ? "cursor-not-allowed" : ""}`}
                             >
-                              <div
-                                className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${
-                                  shippingType === "address"
-                                    ? "border-[oklch(0.7_0.15_55)]"
-                                    : "border-muted-foreground"
-                                }`}
-                              >
-                                {shippingType === "address" && (
-                                  <div className="w-1.5 h-1.5 rounded-full bg-[oklch(0.7_0.15_55)]" />
-                                )}
-                              </div>
+                              <MapPin className="h-3 w-3" />
                               Ship to Address
                             </button>
                             <button
                               onClick={() => isEditable && setShippingType("store")}
                               disabled={!isEditable}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-medium transition-colors ${
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium transition-all ${
                                 shippingType === "store"
-                                  ? "bg-[oklch(0.97_0.08_85)] border-[oklch(0.7_0.15_55)] text-[oklch(0.5_0.15_55)]"
-                                  : "bg-background border-border text-muted-foreground"
-                              } ${!isEditable ? "opacity-60 cursor-not-allowed" : ""}`}
+                                  ? "bg-emerald-50 shadow-sm text-emerald-700 border border-emerald-200"
+                                  : "text-muted-foreground hover:text-foreground"
+                              } ${!isEditable ? "cursor-not-allowed" : ""}`}
                             >
-                              <div
-                                className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${
-                                  shippingType === "store"
-                                    ? "border-[oklch(0.7_0.15_55)]"
-                                    : "border-muted-foreground"
-                                }`}
-                              >
-                                {shippingType === "store" && (
-                                  <div className="w-1.5 h-1.5 rounded-full bg-[oklch(0.7_0.15_55)]" />
-                                )}
-                              </div>
+                              <Store className="h-3 w-3" />
                               Ship to Store
                             </button>
                           </div>
@@ -626,23 +798,23 @@ export default function WorkDetailPage({
                             onChange={(e) => setAddress1(e.target.value)}
                             placeholder="Address Line 1"
                             disabled={!isEditable}
-                            className={`h-6 text-[9px] font-normal text-muted-foreground ${!isEditable ? "opacity-60" : ""}`}
+                            className={`bg-transparent border-0 border-b border-border rounded-none shadow-none h-6 text-[9px] font-normal text-muted-foreground px-1 ${!isEditable ? "opacity-60" : ""}`}
                           />
                           <Input
                             value={address2}
                             onChange={(e) => setAddress2(e.target.value)}
                             placeholder="Address Line 2"
                             disabled={!isEditable}
-                            className={`h-6 text-[9px] font-normal text-muted-foreground ${!isEditable ? "opacity-60" : ""}`}
+                            className={`bg-transparent border-0 border-b border-border rounded-none shadow-none h-6 text-[9px] font-normal text-muted-foreground px-1 ${!isEditable ? "opacity-60" : ""}`}
                           />
-                          <div className="grid grid-cols-3 gap-2">
+                          <div className="grid grid-cols-3 gap-4">
                             <div>
                               <span className="text-[10px] font-bold text-muted-foreground/70 uppercase block mb-0.5">City</span>
                               <Input
                                 value={city}
                                 onChange={(e) => setCity(e.target.value)}
                                 disabled={!isEditable}
-                                className={`h-6 text-[9px] font-normal text-muted-foreground ${!isEditable ? "opacity-60" : ""}`}
+                                className={`bg-transparent border-0 border-b border-border rounded-none shadow-none h-6 text-[9px] font-normal text-muted-foreground px-1 ${!isEditable ? "opacity-60" : ""}`}
                               />
                             </div>
                             <div>
@@ -651,7 +823,7 @@ export default function WorkDetailPage({
                                 value={state}
                                 onChange={(e) => setState(e.target.value)}
                                 disabled={!isEditable}
-                                className={`h-6 text-[9px] font-normal text-muted-foreground ${!isEditable ? "opacity-60" : ""}`}
+                                className={`bg-transparent border-0 border-b border-border rounded-none shadow-none h-6 text-[9px] font-normal text-muted-foreground px-1 ${!isEditable ? "opacity-60" : ""}`}
                               />
                             </div>
                             <div>
@@ -660,7 +832,7 @@ export default function WorkDetailPage({
                                 value={zip}
                                 onChange={(e) => setZip(e.target.value)}
                                 disabled={!isEditable}
-                                className={`h-6 text-[9px] font-normal text-muted-foreground ${!isEditable ? "opacity-60" : ""}`}
+                                className={`bg-transparent border-0 border-b border-border rounded-none shadow-none h-6 text-[9px] font-normal text-muted-foreground px-1 ${!isEditable ? "opacity-60" : ""}`}
                               />
                             </div>
                           </div>
@@ -673,7 +845,7 @@ export default function WorkDetailPage({
                   <div className="border-t border-border mt-4 mb-3" />
 
                   {/* Consent & Agreement Policy */}
-                  <div>
+                  <div className="opacity-60 pointer-events-none select-none">
                     <div className="flex items-center gap-1.5 mb-2">
                       <Check className="h-3.5 w-3.5 text-[oklch(0.7_0.15_55)]" />
                       <h3 className="font-bold text-sm text-[oklch(0.7_0.15_55)]">Consent & Agreement Policy</h3>
@@ -720,21 +892,6 @@ export default function WorkDetailPage({
                           </span>
                         </div>
                       </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                      <div className="flex gap-1.5">
-                        <Button variant="outline" size="sm" className="bg-transparent h-7 text-xs">
-                          Back
-                        </Button>
-                        <Button variant="outline" size="sm" className="bg-transparent h-7 text-xs">
-                          Clear
-                        </Button>
-                      </div>
-                      <Button disabled size="sm" className="bg-muted text-muted-foreground h-7 text-xs">
-                        Save
-                      </Button>
                     </div>
                   </div>
                 </TabsContent>
@@ -818,6 +975,8 @@ export default function WorkDetailPage({
                         <SelectItem value="Inbound Inspection">Inbound Inspection</SelectItem>
                         <SelectItem value="In Progress">In Progress</SelectItem>
                         <SelectItem value="Outbound Inspection">Outbound Inspection</SelectItem>
+                        <SelectItem value="Completed" disabled>Completed</SelectItem>
+                        <SelectItem value="Finalized" disabled>Finalized</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -857,14 +1016,23 @@ export default function WorkDetailPage({
                 <Button
                   onClick={handleSave}
                   size="sm"
-                  disabled={!hasChanges || !isEditable}
-                  className={`w-full h-8 text-xs ${
-                    hasChanges && isEditable
-                      ? "bg-primary hover:bg-primary/90 text-primary-foreground"
-                      : "bg-muted text-muted-foreground cursor-not-allowed"
+                  disabled={(!hasChanges && !saveSuccess) || !isEditable}
+                  className={`w-full h-8 text-xs transition-all ${
+                    saveSuccess
+                      ? "bg-emerald-500 hover:bg-emerald-500 text-white"
+                      : hasChanges && isEditable
+                        ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                        : "bg-muted text-muted-foreground cursor-not-allowed"
                   }`}
                 >
-                  Save
+                  {saveSuccess ? (
+                    <span className="flex items-center gap-1.5">
+                      <Check className="h-3.5 w-3.5" />
+                      Saved
+                    </span>
+                  ) : (
+                    "Save"
+                  )}
                 </Button>
               </div>
 
@@ -982,16 +1150,28 @@ export default function WorkDetailPage({
               </Card>
 
               {/* 작업 취소 */}
-              <div className="flex justify-end mt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-6 text-[10px] px-2 text-muted-foreground/50 border-muted-foreground/20 hover:text-muted-foreground/50 hover:bg-transparent cursor-default"
-                  onClick={() => {}}
-                >
-                  Cancel Work
-                </Button>
-              </div>
+              {isEditable && (
+                <div className="flex justify-end mt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs px-2.5 text-red-400 border-red-200 hover:bg-red-50 hover:text-red-500"
+                    onClick={() => {
+                      // Check if outbound shipment is in transit
+                      if (item.outboundTracking) {
+                        alert("Cannot cancel this work.\n\nAn outbound shipment is currently in transit. Please resolve the shipment before cancelling.")
+                        return
+                      }
+                      if (confirm("Are you sure you want to cancel this work?\n\nThis action cannot be undone.")) {
+                        console.log("Work cancelled:", item.id)
+                        router.push("/")
+                      }
+                    }}
+                  >
+                    Cancel Work
+                  </Button>
+                </div>
+              )}
 
             </div>
           </div>
@@ -1020,6 +1200,52 @@ export default function WorkDetailPage({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Floating Prescription Images */}
+      {floatingImages.length > 0 && (
+        <div
+          className="fixed inset-0 z-[60] pointer-events-none"
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          style={{ pointerEvents: dragging ? "auto" : "none" }}
+        >
+          {floatingImages.map((img) => (
+            <div
+              key={img.id}
+              className="absolute pointer-events-auto"
+              style={{ left: img.x, top: img.y }}
+            >
+              <div className="bg-white rounded-lg shadow-2xl border overflow-hidden" style={{ width: 320 }}>
+                {/* Title bar - draggable */}
+                <div
+                  className="flex items-center justify-between px-2.5 py-1.5 bg-muted/60 border-b cursor-move select-none"
+                  onMouseDown={(e) => handleMouseDown(e, img.id)}
+                >
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <ImageIcon className="h-3 w-3 text-muted-foreground shrink-0" />
+                    <span className="text-[11px] font-medium truncate">{img.name}</span>
+                  </div>
+                  <button
+                    onClick={() => handleCloseFloatingImage(img.id)}
+                    className="text-muted-foreground hover:text-foreground shrink-0 ml-2"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                {/* Image content */}
+                <div className="p-2 bg-muted/20">
+                  <img
+                    src={img.url}
+                    alt={img.name}
+                    className="w-full h-auto rounded object-contain max-h-[400px]"
+                    draggable={false}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
