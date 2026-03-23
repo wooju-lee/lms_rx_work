@@ -83,9 +83,12 @@ const getListItemData = (numId: number) => {
     { period: "(Tint) Lab 2", range: [29, 30] },
   ]
 
-  const store = stores[numId % stores.length]
   const status = statuses[numId % statuses.length]
   const channel = channels[numId % channels.length]
+  const offlineStores = [stores[0], stores[1], stores[2]]
+  const store = channel === "Online"
+    ? stores[3] // US1004 / US_ONLINE
+    : offlineStores[numId % offlineStores.length]
   const orderType = preOrderIds.includes(numId) ? "Pre-order" : "Normal"
   const period = processingPeriods.find(p => numId >= p.range[0] && numId <= p.range[1])?.period || "-"
 

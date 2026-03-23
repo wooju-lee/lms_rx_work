@@ -41,9 +41,12 @@ const generateSampleData = (): WorkItem[] => {
   
   processingPeriods.forEach(({ period, count }) => {
     for (let i = 0; i < count; i++) {
-      const store = stores[id % stores.length]
       const status = statuses[id % statuses.length]
       const channel = channels[id % channels.length]
+      const offlineStores = [stores[0], stores[1], stores[2]] // US_STORE_1~3
+      const store = channel === "Online"
+        ? stores[3] // US1004 / US_ONLINE
+        : offlineStores[id % offlineStores.length]
       const isCompleted = status === "Completed" || status === "Finalized"
       const orderType = preOrderIds.includes(id) ? "Pre-order" : "Normal"
       
