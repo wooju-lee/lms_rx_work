@@ -117,14 +117,11 @@ const getWorkItem = (id: string) => {
     workType: listData.workType,
     processingPeriod: listData.period,
     assignee: listData.assignee,
-    country: "US",
-    membership: {
-      email: "***********@naver.com",
-      phone: "010-****-2222",
-      provider: "google",
-      expDate: "2026. 12. 31",
-      isActive: true,
-    },
+    country: numId === 15 ? "-" : "US",
+    hasMembership: numId !== 15,
+    membership: numId === 15
+      ? { email: "-", phone: "-", provider: "-", expDate: "-", isActive: false }
+      : { email: "***********@naver.com", phone: "010-****-2222", provider: "google", expDate: "2026. 12. 31", isActive: true },
     products: [
       {
         type: "OPTICAL ACETATE",
@@ -161,7 +158,7 @@ const getWorkItem = (id: string) => {
       os: { sph: "+2.00", cyl: "-2.00", axis: "180", pd: "63.0", oc: "-" },
     },
 
-    prescriptionFiles: [
+    prescriptionFiles: numId === 15 ? [] : [
       { id: "p1", name: "prescription_front.jpg", url: "/placeholder.svg?height=600&width=400&text=Prescription+Front" },
       { id: "p2", name: "prescription_back.jpg", url: "/placeholder.svg?height=600&width=400&text=Prescription+Back" },
       { id: "p3", name: "doctor_note.jpg", url: "/placeholder.svg?height=600&width=400&text=Doctor+Note" },
@@ -505,7 +502,12 @@ export default function WorkDetailPage({
                           variant="default"
                           size="sm"
                           onClick={handlePrescriptionView}
-                          className="bg-[oklch(0.7_0.15_55)] hover:bg-[oklch(0.65_0.15_55)] text-white gap-1.5 h-7 text-xs px-3 rounded-md shadow-sm"
+                          disabled={item.prescriptionFiles.length === 0}
+                          className={`gap-1.5 h-7 text-xs px-3 rounded-md shadow-sm ${
+                            item.prescriptionFiles.length === 0
+                              ? "bg-muted text-muted-foreground cursor-not-allowed"
+                              : "bg-[oklch(0.7_0.15_55)] hover:bg-[oklch(0.65_0.15_55)] text-white"
+                          }`}
                         >
                           <ImageIcon className="h-3.5 w-3.5" />
                           Prescription View
@@ -553,9 +555,11 @@ export default function WorkDetailPage({
                         <span className="text-[11px] text-muted-foreground">EXP</span>
                         <div className="flex items-center gap-1.5">
                           <span className="text-[11px]">{item.membership.expDate}</span>
-                          <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-green-300 text-green-600">
-                            Active
-                          </Badge>
+                          {item.membership.isActive && (
+                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-green-300 text-green-600">
+                              Active
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     )}
