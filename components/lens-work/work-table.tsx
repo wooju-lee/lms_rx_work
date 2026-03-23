@@ -150,6 +150,11 @@ export function WorkTable({ data, onDetailClick, onInvoicePrint, onShippingTrans
     return sortDirection === "asc" ? comparison : -comparison
   })
 
+  // Filter by tab: To Store = Offline + Normal only
+  const filteredData = activeTab === "store"
+    ? sortedData.filter(item => item.channel === "Offline" && item.orderType !== "Pre-order")
+    : sortedData
+
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortDirection(prev => prev === "asc" ? "desc" : "asc")
@@ -227,7 +232,7 @@ export function WorkTable({ data, onDetailClick, onInvoicePrint, onShippingTrans
       <div className="flex items-center justify-between px-6 py-4 border-b border-border">
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Total</span>
-          <span className="text-sm font-bold">{totalCount}</span>
+          <span className="text-sm font-bold">{filteredData.length}</span>
         </div>
         <div className="flex items-center gap-2">
           <Button 
@@ -364,7 +369,7 @@ export function WorkTable({ data, onDetailClick, onInvoicePrint, onShippingTrans
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedData.map((item) => (
+          {filteredData.map((item) => (
             <TableRow key={item.id}>
               <TableCell className="text-center">
                 <Checkbox 
