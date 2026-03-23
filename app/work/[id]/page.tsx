@@ -149,7 +149,7 @@ const getWorkItem = (id: string) => {
       name: "John Doe",
       phone: "01072119843",
       email: "landa0707@naver.com",
-      shippingType: (listData.channel === "Online" ? "address" : "store") as "address" | "store",
+      shippingType: (listData.channel === "Offline" && listData.orderType !== "Pre-order" ? "store" : "address") as "address" | "store",
       address1: "Address Address Address Address",
       address2: "Address Address Address Address",
       city: "New York",
@@ -770,33 +770,40 @@ export default function WorkDetailPage({
                       <div className="grid grid-cols-[80px_1fr] gap-8 items-start">
                         <Label className="text-xs font-bold text-foreground pt-1.5">Address</Label>
                         <div className="space-y-3">
-                          {/* Shipping Type Toggle */}
-                          <div className={`inline-flex rounded-lg bg-muted/50 p-0.5 ${!isEditable ? "opacity-60" : ""}`}>
-                            <button
-                              onClick={() => isEditable && setShippingType("address")}
-                              disabled={!isEditable}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium transition-all ${
-                                shippingType === "address"
-                                  ? "bg-emerald-50 shadow-sm text-emerald-700 border border-emerald-200"
-                                  : "text-muted-foreground hover:text-foreground"
-                              } ${!isEditable ? "cursor-not-allowed" : ""}`}
-                            >
+                          {/* Shipping Type Toggle - Ship to Store only for Offline + Normal */}
+                          {item.channel === "Offline" && item.orderType !== "Pre-order" ? (
+                            <div className={`inline-flex rounded-lg bg-muted/50 p-0.5 ${!isEditable ? "opacity-60" : ""}`}>
+                              <button
+                                onClick={() => isEditable && setShippingType("address")}
+                                disabled={!isEditable}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium transition-all ${
+                                  shippingType === "address"
+                                    ? "bg-emerald-50 shadow-sm text-emerald-700 border border-emerald-200"
+                                    : "text-muted-foreground hover:text-foreground"
+                                } ${!isEditable ? "cursor-not-allowed" : ""}`}
+                              >
+                                <MapPin className="h-3 w-3" />
+                                Ship to Address
+                              </button>
+                              <button
+                                onClick={() => isEditable && setShippingType("store")}
+                                disabled={!isEditable}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium transition-all ${
+                                  shippingType === "store"
+                                    ? "bg-emerald-50 shadow-sm text-emerald-700 border border-emerald-200"
+                                    : "text-muted-foreground hover:text-foreground"
+                                } ${!isEditable ? "cursor-not-allowed" : ""}`}
+                              >
+                                <Store className="h-3 w-3" />
+                                Ship to Store
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-medium">
                               <MapPin className="h-3 w-3" />
                               Ship to Address
-                            </button>
-                            <button
-                              onClick={() => isEditable && setShippingType("store")}
-                              disabled={!isEditable}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium transition-all ${
-                                shippingType === "store"
-                                  ? "bg-emerald-50 shadow-sm text-emerald-700 border border-emerald-200"
-                                  : "text-muted-foreground hover:text-foreground"
-                              } ${!isEditable ? "cursor-not-allowed" : ""}`}
-                            >
-                              <Store className="h-3 w-3" />
-                              Ship to Store
-                            </button>
-                          </div>
+                            </div>
+                          )}
 
                           {/* Address Fields */}
                           <Input
