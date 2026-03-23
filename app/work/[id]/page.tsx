@@ -494,12 +494,11 @@ export default function WorkDetailPage({
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium text-xs">{item.membership.email}</p>
-                        <p className="text-[11px] text-muted-foreground">
-                          {item.channel === "Online"
-                            ? item.membership.provider
-                            : `${item.membership.phone} · ${item.membership.provider}`
-                          }
-                        </p>
+                        {item.channel !== "Online" && (
+                          <p className="text-[11px] text-muted-foreground">
+                            {item.membership.phone} · {item.membership.provider}
+                          </p>
+                        )}
                       </div>
                       <div className="relative">
                         <Button
