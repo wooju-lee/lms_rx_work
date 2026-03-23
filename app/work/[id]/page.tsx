@@ -493,7 +493,7 @@ export default function WorkDetailPage({
                         <p className="font-medium text-xs">{item.membership.email}</p>
                         {item.channel !== "Online" && (
                           <p className="text-[11px] text-muted-foreground">
-                            {item.membership.phone} · {item.membership.provider}
+                            {item.hasMembership ? `${item.membership.phone} · ${item.membership.provider}` : "-"}
                           </p>
                         )}
                       </div>
