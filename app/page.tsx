@@ -97,6 +97,10 @@ export default function LensWorkManagement() {
     setInvoiceModalOpen(true)
   }
 
+  const handlePickingListPrint = (item: WorkItem) => {
+    // Picking List 출력
+  }
+
   const handleShippingTransmit = (item: WorkItem) => {
     // 송장 전송
   }
@@ -152,6 +156,7 @@ export default function LensWorkManagement() {
             data={sampleData}
             onDetailClick={handleDetailClick}
             onInvoicePrint={handleInvoicePrint}
+            onPickingListPrint={handlePickingListPrint}
             onShippingTransmit={handleShippingTransmit}
             onExcelDownload={handleExcelDownload}
             onWorkLabelPrint={handleWorkLabelPrint}

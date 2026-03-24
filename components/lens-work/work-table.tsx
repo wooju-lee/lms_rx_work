@@ -55,6 +55,7 @@ interface WorkTableProps {
   data: WorkItem[]
   onDetailClick: (item: WorkItem) => void
   onInvoicePrint: (item: WorkItem) => void
+  onPickingListPrint: (item: WorkItem) => void
   onShippingTransmit: (item: WorkItem) => void
   onExcelDownload: () => void
   onWorkLabelPrint: (selectedItems: WorkItem[]) => void
@@ -113,7 +114,7 @@ const getStatusBadge = (status: WorkItem["status"]) => {
 type SortField = "orderDate" | "approvalDate" | "leadTime" | "completionDate"
 type SortDirection = "asc" | "desc"
 
-export function WorkTable({ data, onDetailClick, onInvoicePrint, onShippingTransmit, onExcelDownload, onWorkLabelPrint, onCreateShipment }: WorkTableProps) {
+export function WorkTable({ data, onDetailClick, onInvoicePrint, onPickingListPrint, onShippingTransmit, onExcelDownload, onWorkLabelPrint, onCreateShipment }: WorkTableProps) {
   const [selectedItems, setSelectedItems] = useState<string[]>([])
   const [activeTab, setActiveTab] = useState<"customer" | "store">("customer")
   const [downloadPopoverOpen, setDownloadPopoverOpen] = useState(false)
@@ -235,19 +236,6 @@ export function WorkTable({ data, onDetailClick, onInvoicePrint, onShippingTrans
           <span className="text-sm font-bold">{filteredData.length}</span>
         </div>
         <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            onClick={onCreateShipment}
-            disabled={selectedItems.length === 0}
-            className="gap-2 border-border bg-background hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Outbound Registration
-            {selectedItems.length > 0 && (
-              <Badge variant="secondary" className="ml-1 h-5 min-w-5 px-1.5">
-                {selectedItems.length}
-              </Badge>
-            )}
-          </Button>
           <Popover open={downloadPopoverOpen} onOpenChange={setDownloadPopoverOpen}>
             <PopoverTrigger asChild>
               <Button 
@@ -295,12 +283,6 @@ export function WorkTable({ data, onDetailClick, onInvoicePrint, onShippingTrans
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/50">
-            <TableHead className="w-12 text-center">
-              <Checkbox 
-                checked={selectedItems.length === data.length && data.length > 0}
-                onCheckedChange={handleSelectAll}
-              />
-            </TableHead>
             <TableHead className="text-center">
               <button 
                 onClick={() => handleSort("orderDate")}
@@ -336,8 +318,8 @@ export function WorkTable({ data, onDetailClick, onInvoicePrint, onShippingTrans
             <TableHead className="text-center">Work Type</TableHead>
             <TableHead className="text-center">Processing Period</TableHead>
             <TableHead className="text-center">Worker</TableHead>
-            <TableHead className="text-center">Detail</TableHead>
-            <TableHead className="text-center">Invoice Print</TableHead>
+            <TableHead className="text-center">Invoice</TableHead>
+            <TableHead className="text-center">Picking List</TableHead>
             <TableHead className="text-center">
               <TooltipProvider>
                 <Tooltip>
@@ -370,13 +352,7 @@ export function WorkTable({ data, onDetailClick, onInvoicePrint, onShippingTrans
         </TableHeader>
         <TableBody>
           {filteredData.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell className="text-center">
-                <Checkbox 
-                  checked={selectedItems.includes(item.id)}
-                  onCheckedChange={(checked) => handleSelectItem(item.id, checked as boolean)}
-                />
-              </TableCell>
+            <TableRow key={item.id} onClick={() => onDetailClick(item)} className="cursor-pointer hover:bg-muted/50">
               <TableCell className="text-center text-sm">
                 {item.orderDate}
               </TableCell>
@@ -391,7 +367,7 @@ export function WorkTable({ data, onDetailClick, onInvoicePrint, onShippingTrans
               </TableCell>
               <TableCell className="text-center">
                 <div className="flex flex-col items-center">
-                  <span className="text-primary font-medium underline cursor-pointer">
+                  <span className="text-primary font-medium underline cursor-pointer" onClick={(e) => { e.stopPropagation(); onDetailClick(item); }}>
                     {item.orderNumber}
                   </span>
                   <span className="text-muted-foreground">
@@ -429,18 +405,18 @@ export function WorkTable({ data, onDetailClick, onInvoicePrint, onShippingTrans
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => onDetailClick(item)}
+                  onClick={(e) => { e.stopPropagation(); onInvoicePrint(item); }}
                   className="gap-1"
                 >
-                  <FileText className="h-3 w-3" />
-                  Detail
+                  <Printer className="h-3 w-3" />
+                  Print
                 </Button>
               </TableCell>
               <TableCell className="text-center">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => onInvoicePrint(item)}
+                  onClick={(e) => { e.stopPropagation(); onPickingListPrint(item); }}
                   className="gap-1"
                 >
                   <Printer className="h-3 w-3" />

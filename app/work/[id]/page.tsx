@@ -411,9 +411,9 @@ export default function WorkDetailPage({
           {/* Back to List */}
           <button
             onClick={() => router.push("/")}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-2"
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-3 py-1"
           >
-            <ArrowLeft className="h-3.5 w-3.5" />
+            <ArrowLeft className="h-4 w-4" />
             Back to List
           </button>
 
@@ -467,7 +467,7 @@ export default function WorkDetailPage({
                 className="gap-1.5 bg-transparent h-7 text-xs px-2.5"
               >
                 <Package className="h-3.5 w-3.5" />
-                Work Print
+                Picking List
               </Button>
               <Button
                 variant="outline"
