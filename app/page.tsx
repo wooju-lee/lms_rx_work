@@ -8,6 +8,8 @@ import { FilterSection } from "@/components/lens-work/filter-section"
 import { WorkTable, type WorkItem } from "@/components/lens-work/work-table"
 import { ProcessingStats } from "@/components/lens-work/processing-stats"
 import { InvoiceModal } from "@/components/lens-work/invoice-modal"
+import { OutboundModal } from "@/components/lens-work/outbound-modal"
+import { PickingListModal } from "@/components/lens-work/picking-list-modal"
 
 // Helper to generate sample data with correct distribution to match stats
 // Stats: (Basic) IIC Lab: 7, (Basic) Lab 1: 5, (Basic) Lab 2: 3, (Tint) IIC Lab: 9, (Tint) Lab 1: 4, (Tint) Lab 2: 2 = Total 30
@@ -79,6 +81,10 @@ export default function LensWorkManagement() {
   const router = useRouter()
   const [invoiceModalOpen, setInvoiceModalOpen] = useState(false)
   const [selectedInvoiceItem, setSelectedInvoiceItem] = useState<WorkItem | null>(null)
+  const [outboundModalOpen, setOutboundModalOpen] = useState(false)
+  const [outboundSelectedItems, setOutboundSelectedItems] = useState<WorkItem[]>([])
+  const [pickingListModalOpen, setPickingListModalOpen] = useState(false)
+  const [pickingListItems, setPickingListItems] = useState<WorkItem[]>([])
 
   const handleSearch = () => {
     console.log("[v0] Search triggered")
@@ -97,8 +103,10 @@ export default function LensWorkManagement() {
     setInvoiceModalOpen(true)
   }
 
-  const handlePickingListPrint = (item: WorkItem) => {
-    // Picking List 출력
+  const handlePickingListPrint = (items: WorkItem | WorkItem[]) => {
+    const itemArray = Array.isArray(items) ? items : [items]
+    setPickingListItems(itemArray)
+    setPickingListModalOpen(true)
   }
 
   const handleShippingTransmit = (item: WorkItem) => {
@@ -109,8 +117,9 @@ export default function LensWorkManagement() {
     // 작업 라벨 출력 - 체크박스 선택된 주문에 대한 라벨 출력
   }
 
-  const handleCreateShipment = () => {
-    // 출고 생성
+  const handleCreateShipment = (selectedItems: WorkItem[]) => {
+    setOutboundSelectedItems(selectedItems)
+    setOutboundModalOpen(true)
   }
 
   return (
@@ -168,6 +177,23 @@ export default function LensWorkManagement() {
             open={invoiceModalOpen}
             onOpenChange={setInvoiceModalOpen}
             item={selectedInvoiceItem}
+          />
+
+          {/* Outbound Modal */}
+          <OutboundModal
+            open={outboundModalOpen}
+            onOpenChange={setOutboundModalOpen}
+            selectedItems={outboundSelectedItems}
+            onComplete={() => {
+              setOutboundSelectedItems([])
+            }}
+          />
+
+          {/* Picking List Modal */}
+          <PickingListModal
+            open={pickingListModalOpen}
+            onOpenChange={setPickingListModalOpen}
+            items={pickingListItems}
           />
         </main>
 

@@ -55,11 +55,11 @@ interface WorkTableProps {
   data: WorkItem[]
   onDetailClick: (item: WorkItem) => void
   onInvoicePrint: (item: WorkItem) => void
-  onPickingListPrint: (item: WorkItem) => void
+  onPickingListPrint: (items: WorkItem | WorkItem[]) => void
   onShippingTransmit: (item: WorkItem) => void
   onExcelDownload: () => void
   onWorkLabelPrint: (selectedItems: WorkItem[]) => void
-  onCreateShipment: () => void
+  onCreateShipment: (selectedItems: WorkItem[]) => void
 }
 
 // Calculate lead time (리드타임) in days
@@ -207,7 +207,7 @@ export function WorkTable({ data, onDetailClick, onInvoicePrint, onPickingListPr
       <div className="px-6 pt-4">
         <div className="flex gap-4 border-b border-border">
           <button
-            onClick={() => setActiveTab("customer")}
+            onClick={() => { setActiveTab("customer"); setSelectedItems([]) }}
             className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
               activeTab === "customer"
                 ? "border-primary text-primary"
@@ -217,7 +217,7 @@ export function WorkTable({ data, onDetailClick, onInvoicePrint, onPickingListPr
             To Customer
           </button>
           <button
-            onClick={() => setActiveTab("store")}
+            onClick={() => { setActiveTab("store"); setSelectedItems([]) }}
             className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
               activeTab === "store"
                 ? "border-primary text-primary"
@@ -236,6 +236,41 @@ export function WorkTable({ data, onDetailClick, onInvoicePrint, onPickingListPr
           <span className="text-sm font-bold">{filteredData.length}</span>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              const selected = filteredData.filter((item) => selectedItems.includes(item.id))
+              onPickingListPrint(selected)
+            }}
+            disabled={selectedItems.length === 0}
+            className="gap-2 border-border bg-background hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Printer className="h-4 w-4" />
+            Picking List
+            {selectedItems.length > 0 && (
+              <Badge variant="secondary" className="ml-1 h-5 min-w-5 px-1.5">
+                {selectedItems.length}
+              </Badge>
+            )}
+          </Button>
+          {activeTab === "store" && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                const selected = filteredData.filter((item) => selectedItems.includes(item.id))
+                onCreateShipment(selected)
+              }}
+              disabled={selectedItems.length === 0}
+              className="gap-2 border-border bg-background hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Outbound Registration
+              {selectedItems.length > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 min-w-5 px-1.5">
+                  {selectedItems.length}
+                </Badge>
+              )}
+            </Button>
+          )}
           <Popover open={downloadPopoverOpen} onOpenChange={setDownloadPopoverOpen}>
             <PopoverTrigger asChild>
               <Button 
@@ -283,8 +318,14 @@ export function WorkTable({ data, onDetailClick, onInvoicePrint, onPickingListPr
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/50">
+            <TableHead className="w-12 text-center">
+              <Checkbox
+                checked={selectedItems.length === filteredData.length && filteredData.length > 0}
+                onCheckedChange={handleSelectAll}
+              />
+            </TableHead>
             <TableHead className="text-center">
-              <button 
+              <button
                 onClick={() => handleSort("orderDate")}
                 className="flex items-center justify-center w-full hover:text-primary transition-colors"
               >
@@ -353,6 +394,12 @@ export function WorkTable({ data, onDetailClick, onInvoicePrint, onPickingListPr
         <TableBody>
           {filteredData.map((item) => (
             <TableRow key={item.id} onClick={() => onDetailClick(item)} className="cursor-pointer hover:bg-muted/50">
+              <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                <Checkbox
+                  checked={selectedItems.includes(item.id)}
+                  onCheckedChange={(checked) => handleSelectItem(item.id, checked as boolean)}
+                />
+              </TableCell>
               <TableCell className="text-center text-sm">
                 {item.orderDate}
               </TableCell>
