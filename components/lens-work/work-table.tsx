@@ -326,7 +326,7 @@ export function WorkTable({ data, onDetailClick, onInvoicePrint, onShippingTrans
                 <span className="text-muted-foreground">(Number #)</span>
               </div>
             </TableHead>
-            <TableHead className="text-center">Order Type</TableHead>
+            <TableHead className="text-center">Order Tag</TableHead>
             <TableHead className="text-center">
               Store Info
               <br />

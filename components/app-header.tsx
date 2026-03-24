@@ -11,7 +11,11 @@ import {
 
 export function AppHeader() {
   return (
-    <header className="flex items-center justify-end gap-4 h-14 px-6 bg-card border-b border-border">
+    <header className="flex items-center justify-between h-14 px-6 bg-card border-b border-border">
+      {/* Logo */}
+      <span className="text-lg font-bold tracking-tight">IIC_BO</span>
+
+      <div className="flex items-center gap-4">
       {/* Language Selector */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -43,6 +47,7 @@ export function AppHeader() {
           <DropdownMenuItem>로그아웃</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      </div>
     </header>
   )
 }

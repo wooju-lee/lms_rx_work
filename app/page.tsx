@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { ChevronRight } from "lucide-react"
-import { AppSidebar } from "@/components/app-sidebar"
 import { AppHeader } from "@/components/app-header"
 import { FilterSection } from "@/components/lens-work/filter-section"
 import { WorkTable, type WorkItem } from "@/components/lens-work/work-table"
@@ -112,11 +111,8 @@ export default function LensWorkManagement() {
 
   return (
     <div className="flex h-screen bg-background">
-      {/* Sidebar */}
-      <AppSidebar />
-
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden w-full">
         {/* Header */}
         <AppHeader />
 

@@ -28,7 +28,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { AppSidebar } from "@/components/app-sidebar"
 import { AppHeader } from "@/components/app-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -250,6 +249,9 @@ export default function WorkDetailPage({
   // Check if editable based on status (Completed and Finalized are read-only)
   const isEditable = !["Completed", "Finalized"].includes(item.status)
 
+  // Address fields are not editable for Online channel
+  const isAddressEditable = isEditable && item.channel !== "Online"
+
   // Label Print is only enabled when outbound registration is completed (Outbound Inspection status)
   const isLabelPrintEnabled = workStatus === "Outbound Inspection"
 
@@ -308,6 +310,10 @@ export default function WorkDetailPage({
 
   const handleLabelPrint = () => {
     // Print paper invoice for B2B re-shipment
+  }
+
+  const handleSerialPrint = () => {
+    // Serial print
   }
 
   const handleAddComment = () => {
@@ -398,9 +404,7 @@ export default function WorkDetailPage({
 
   return (
     <div className="flex h-screen bg-background">
-      <AppSidebar />
-
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden w-full">
         <AppHeader />
 
         <main className="flex-1 overflow-y-auto p-4">
@@ -445,7 +449,17 @@ export default function WorkDetailPage({
               </div>
             </div>
             {/* Right side - Action Buttons */}
-            <div className="col-span-1 flex items-center justify-end gap-1.5">
+            <div className="col-span-1 flex items-center justify-between">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSerialPrint}
+                className="gap-1.5 bg-transparent h-7 text-xs px-2.5"
+              >
+                <Printer className="h-3.5 w-3.5" />
+                Serial Print
+              </Button>
+              <div className="flex items-center gap-1.5">
               <Button
                 variant="outline"
                 size="sm"
@@ -474,6 +488,7 @@ export default function WorkDetailPage({
                 <Printer className="h-3.5 w-3.5" />
                 Label Print
               </Button>
+              </div>
             </div>
           </div>
 
@@ -810,15 +825,15 @@ export default function WorkDetailPage({
                             value={address1}
                             onChange={(e) => setAddress1(e.target.value)}
                             placeholder="Address Line 1"
-                            disabled={!isEditable}
-                            className={`bg-transparent border-0 border-b border-border rounded-none shadow-none h-6 text-[9px] font-normal text-muted-foreground px-1 ${!isEditable ? "opacity-60" : ""}`}
+                            disabled={!isAddressEditable}
+                            className={`bg-transparent border-0 border-b border-border rounded-none shadow-none h-6 text-[9px] font-normal text-muted-foreground px-1 ${!isAddressEditable ? "opacity-60" : ""}`}
                           />
                           <Input
                             value={address2}
                             onChange={(e) => setAddress2(e.target.value)}
                             placeholder="Address Line 2"
-                            disabled={!isEditable}
-                            className={`bg-transparent border-0 border-b border-border rounded-none shadow-none h-6 text-[9px] font-normal text-muted-foreground px-1 ${!isEditable ? "opacity-60" : ""}`}
+                            disabled={!isAddressEditable}
+                            className={`bg-transparent border-0 border-b border-border rounded-none shadow-none h-6 text-[9px] font-normal text-muted-foreground px-1 ${!isAddressEditable ? "opacity-60" : ""}`}
                           />
                           <div className="grid grid-cols-3 gap-4">
                             <div>
@@ -826,8 +841,8 @@ export default function WorkDetailPage({
                               <Input
                                 value={city}
                                 onChange={(e) => setCity(e.target.value)}
-                                disabled={!isEditable}
-                                className={`bg-transparent border-0 border-b border-border rounded-none shadow-none h-6 text-[9px] font-normal text-muted-foreground px-1 ${!isEditable ? "opacity-60" : ""}`}
+                                disabled={!isAddressEditable}
+                                className={`bg-transparent border-0 border-b border-border rounded-none shadow-none h-6 text-[9px] font-normal text-muted-foreground px-1 ${!isAddressEditable ? "opacity-60" : ""}`}
                               />
                             </div>
                             <div>
@@ -835,8 +850,8 @@ export default function WorkDetailPage({
                               <Input
                                 value={state}
                                 onChange={(e) => setState(e.target.value)}
-                                disabled={!isEditable}
-                                className={`bg-transparent border-0 border-b border-border rounded-none shadow-none h-6 text-[9px] font-normal text-muted-foreground px-1 ${!isEditable ? "opacity-60" : ""}`}
+                                disabled={!isAddressEditable}
+                                className={`bg-transparent border-0 border-b border-border rounded-none shadow-none h-6 text-[9px] font-normal text-muted-foreground px-1 ${!isAddressEditable ? "opacity-60" : ""}`}
                               />
                             </div>
                             <div>
@@ -844,8 +859,8 @@ export default function WorkDetailPage({
                               <Input
                                 value={zip}
                                 onChange={(e) => setZip(e.target.value)}
-                                disabled={!isEditable}
-                                className={`bg-transparent border-0 border-b border-border rounded-none shadow-none h-6 text-[9px] font-normal text-muted-foreground px-1 ${!isEditable ? "opacity-60" : ""}`}
+                                disabled={!isAddressEditable}
+                                className={`bg-transparent border-0 border-b border-border rounded-none shadow-none h-6 text-[9px] font-normal text-muted-foreground px-1 ${!isAddressEditable ? "opacity-60" : ""}`}
                               />
                             </div>
                           </div>
@@ -854,10 +869,11 @@ export default function WorkDetailPage({
                     </div>
                   </div>
 
+                  {/* Consent & Agreement Policy - Offline only */}
+                  {item.channel !== "Online" && (<>
                   {/* Divider */}
                   <div className="border-t border-border mt-4 mb-3" />
 
-                  {/* Consent & Agreement Policy */}
                   <div className="opacity-60 pointer-events-none select-none">
                     <div className="flex items-center gap-1.5 mb-2">
                       <Check className="h-3.5 w-3.5 text-[oklch(0.7_0.15_55)]" />
@@ -907,6 +923,7 @@ export default function WorkDetailPage({
                       </div>
                     </div>
                   </div>
+                  </>)}
                 </TabsContent>
 
                 {/* Comment Tab */}
