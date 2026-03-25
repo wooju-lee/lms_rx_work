@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, use } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import {
   ChevronRight,
   ArrowLeft,
@@ -203,6 +203,9 @@ export default function WorkDetailPage({
 }) {
   const { id } = use(params)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const tab = searchParams.get("tab") as "customer" | "store" | null
+  const isCustomerTab = tab === "customer"
   const item = getWorkItem(id)
 
   // Editable work status fields
@@ -245,6 +248,12 @@ export default function WorkDetailPage({
 
   // Shipment label state
   const [shipmentLabelNo, setShipmentLabelNo] = useState("")
+
+  // Outbound registration state (for To Customer tab)
+  const [outboundRegistered, setOutboundRegistered] = useState(false)
+  const [outboundConfirmOpen, setOutboundConfirmOpen] = useState(false)
+  const [labelRegConfirmOpen, setLabelRegConfirmOpen] = useState(false)
+  const [labelRegistered, setLabelRegistered] = useState(false)
 
   // Check if editable based on status (Completed and Finalized are read-only)
   const isEditable = !["Completed", "Finalized"].includes(item.status)
@@ -478,6 +487,30 @@ export default function WorkDetailPage({
                 <FileText className="h-3.5 w-3.5" />
                 Invoice
               </Button>
+              {isCustomerTab ? (
+              outboundRegistered ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setLabelRegConfirmOpen(true)}
+                disabled={labelRegistered}
+                className="gap-1.5 bg-transparent h-7 text-xs px-2.5 border-indigo-300 text-indigo-600 hover:bg-indigo-50"
+              >
+                <Truck className="h-3.5 w-3.5" />
+                Label Registration
+              </Button>
+              ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setOutboundConfirmOpen(true)}
+                className="gap-1.5 bg-transparent h-7 text-xs px-2.5"
+              >
+                <Package className="h-3.5 w-3.5" />
+                Outbound Registration
+              </Button>
+              )
+              ) : (
               <Button
                 variant="outline"
                 size="sm"
@@ -488,6 +521,7 @@ export default function WorkDetailPage({
                 <Printer className="h-3.5 w-3.5" />
                 Label Print
               </Button>
+              )}
               </div>
             </div>
           </div>
@@ -1276,6 +1310,75 @@ export default function WorkDetailPage({
           ))}
         </div>
       )}
+      {/* Outbound Registration Confirm Dialog (ERP) */}
+      <Dialog open={outboundConfirmOpen} onOpenChange={setOutboundConfirmOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-sm">
+              <Package className="h-4 w-4" />
+              Outbound Registration
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-1">
+            <div className="text-xs text-muted-foreground bg-muted/50 rounded-md p-3">
+              <span className="font-medium text-foreground">{item.orderNumber}</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              This order will be sent to ERP for outbound registration. Do you want to proceed?
+            </p>
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                onClick={() => {
+                  setOutboundRegistered(true)
+                  setWorkStatus("Completed")
+                  setOutboundConfirmOpen(false)
+                }}
+                className="h-8 text-xs px-4 gap-1.5"
+              >
+                <Package className="h-3.5 w-3.5" />
+                Confirm
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Label Registration Confirm Dialog (TMS) */}
+      <Dialog open={labelRegConfirmOpen} onOpenChange={setLabelRegConfirmOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-sm">
+              <Truck className="h-4 w-4" />
+              Label Registration
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-1">
+            <div className="text-xs text-muted-foreground bg-muted/50 rounded-md p-3">
+              <span className="font-medium text-foreground">{item.orderNumber}</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              This order will be sent to TMS for label registration. Do you want to proceed?
+            </p>
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                onClick={() => {
+                  console.log("TMS Label Registration:", {
+                    orderId: item.id,
+                  })
+                  setLabelRegistered(true)
+                  setLabelRegConfirmOpen(false)
+                }}
+                className="h-8 text-xs px-4 gap-1.5"
+              >
+                <Truck className="h-3.5 w-3.5" />
+                Confirm
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

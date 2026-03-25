@@ -53,7 +53,7 @@ export interface WorkItem {
 
 interface WorkTableProps {
   data: WorkItem[]
-  onDetailClick: (item: WorkItem) => void
+  onDetailClick: (item: WorkItem, tab: "customer" | "store") => void
   onInvoicePrint: (item: WorkItem) => void
   onPickingListPrint: (items: WorkItem | WorkItem[]) => void
   onShippingTransmit: (item: WorkItem) => void
@@ -393,7 +393,7 @@ export function WorkTable({ data, onDetailClick, onInvoicePrint, onPickingListPr
         </TableHeader>
         <TableBody>
           {filteredData.map((item) => (
-            <TableRow key={item.id} onClick={() => onDetailClick(item)} className="cursor-pointer hover:bg-muted/50">
+            <TableRow key={item.id} onClick={() => onDetailClick(item, activeTab)} className="cursor-pointer hover:bg-muted/50">
               <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
                 <Checkbox
                   checked={selectedItems.includes(item.id)}
@@ -414,7 +414,7 @@ export function WorkTable({ data, onDetailClick, onInvoicePrint, onPickingListPr
               </TableCell>
               <TableCell className="text-center">
                 <div className="flex flex-col items-center">
-                  <span className="text-primary font-medium underline cursor-pointer" onClick={(e) => { e.stopPropagation(); onDetailClick(item); }}>
+                  <span className="text-primary font-medium underline cursor-pointer" onClick={(e) => { e.stopPropagation(); onDetailClick(item, activeTab); }}>
                     {item.orderNumber}
                   </span>
                   <span className="text-muted-foreground">

@@ -44,6 +44,11 @@ const STORE_OPTIONS_BY_BP: Record<string, { value: string; label: string }[]> = 
   ],
 }
 
+const formatDate = (date: Date) => date.toISOString().split("T")[0]
+const today = new Date()
+const thirtyDaysAgo = new Date(today)
+thirtyDaysAgo.setDate(today.getDate() - 30)
+
 export function FilterSection({ onSearch }: FilterSectionProps) {
   const [quickDate, setQuickDate] = useState<QuickDate | null>(null)
   const [selectedBP, setSelectedBP] = useState<string>("")
@@ -231,7 +236,7 @@ export function FilterSection({ onSearch }: FilterSectionProps) {
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
               <Input
                 type="date"
-                defaultValue="2025-01-01"
+                defaultValue={formatDate(thirtyDaysAgo)}
                 className="w-40 pl-10 bg-background border-border [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
               />
             </div>
@@ -240,7 +245,7 @@ export function FilterSection({ onSearch }: FilterSectionProps) {
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
               <Input
                 type="date"
-                defaultValue="2025-01-01"
+                defaultValue={formatDate(today)}
                 className="w-40 pl-10 bg-background border-border [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
               />
             </div>

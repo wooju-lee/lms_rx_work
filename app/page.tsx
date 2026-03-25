@@ -94,8 +94,8 @@ export default function LensWorkManagement() {
     // 엑셀 다운로드 - 리스트 기준 출력
   }
 
-  const handleDetailClick = (item: WorkItem) => {
-    router.push(`/work/${item.id}`)
+  const handleDetailClick = (item: WorkItem, tab: "customer" | "store") => {
+    router.push(`/work/${item.id}?tab=${tab}`)
   }
 
   const handleInvoicePrint = (item: WorkItem) => {
