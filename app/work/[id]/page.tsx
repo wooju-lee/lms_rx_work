@@ -57,6 +57,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { InvoiceModal } from "@/components/lens-work/invoice-modal"
 
 // Replicate list page data generation to keep detail in sync
 const getListItemData = (numId: number) => {
@@ -249,6 +250,9 @@ export default function WorkDetailPage({
   // Shipment label state
   const [shipmentLabelNo, setShipmentLabelNo] = useState("")
 
+  // Invoice modal state
+  const [invoiceModalOpen, setInvoiceModalOpen] = useState(false)
+
   // Outbound registration state (for To Customer tab)
   const [outboundRegistered, setOutboundRegistered] = useState(false)
   const [outboundConfirmOpen, setOutboundConfirmOpen] = useState(false)
@@ -264,11 +268,8 @@ export default function WorkDetailPage({
   // Label Print is only enabled when outbound registration is completed (Outbound Inspection status)
   const isLabelPrintEnabled = workStatus === "Outbound Inspection"
 
-  // Track if any changes have been made (compared to last saved values)
-  const hasChanges =
-    workStatus !== savedValues.workStatus ||
-    workType !== savedValues.workType ||
-    processingPeriod !== savedValues.processingPeriod ||
+  // Track address changes
+  const hasAddressChanges =
     shippingType !== savedValues.shippingType ||
     address1 !== savedValues.address1 ||
     address2 !== savedValues.address2 ||
@@ -276,37 +277,27 @@ export default function WorkDetailPage({
     state !== savedValues.state ||
     zip !== savedValues.zip
 
-  const [saveSuccess, setSaveSuccess] = useState(false)
+  // Track work status changes
+  const hasWorkStatusChanges =
+    workStatus !== savedValues.workStatus ||
+    workType !== savedValues.workType ||
+    processingPeriod !== savedValues.processingPeriod
 
-  const handleSave = () => {
-    // Save all changes - in real app, this would call API
-    console.log("Saving changes:", {
-      workStatus,
-      workType,
-      processingPeriod,
-      shippingType,
-      address1,
-      address2,
-      city,
-      state,
-      zip,
-    })
+  const [addressSaveSuccess, setAddressSaveSuccess] = useState(false)
+  const [workStatusSaveSuccess, setWorkStatusSaveSuccess] = useState(false)
 
-    // Update saved values to reflect current state
-    setSavedValues({
-      workStatus,
-      workType,
-      processingPeriod,
-      shippingType,
-      address1,
-      address2,
-      city,
-      state,
-      zip,
-    })
+  const handleSaveAddress = () => {
+    console.log("Saving address:", { shippingType, address1, address2, city, state, zip })
+    setSavedValues((prev) => ({ ...prev, shippingType, address1, address2, city, state, zip }))
+    setAddressSaveSuccess(true)
+    setTimeout(() => setAddressSaveSuccess(false), 2000)
+  }
 
-    setSaveSuccess(true)
-    setTimeout(() => setSaveSuccess(false), 2000)
+  const handleSaveWorkStatus = () => {
+    console.log("Saving work status:", { workStatus, workType, processingPeriod })
+    setSavedValues((prev) => ({ ...prev, workStatus, workType, processingPeriod }))
+    setWorkStatusSaveSuccess(true)
+    setTimeout(() => setWorkStatusSaveSuccess(false), 2000)
   }
 
   const handleWorkPrint = () => {
@@ -314,7 +305,7 @@ export default function WorkDetailPage({
   }
 
   const handleInvoicePrint = () => {
-    // Print document that comes with the order before customer delivery
+    setInvoiceModalOpen(true)
   }
 
   const handleLabelPrint = () => {
@@ -903,6 +894,33 @@ export default function WorkDetailPage({
                     </div>
                   </div>
 
+                  {/* Address Save Button */}
+                  {isAddressEditable && (
+                    <div className="flex justify-end pt-1">
+                      <Button
+                        onClick={handleSaveAddress}
+                        size="sm"
+                        disabled={(!hasAddressChanges && !addressSaveSuccess)}
+                        className={`h-7 text-xs px-4 transition-all ${
+                          addressSaveSuccess
+                            ? "bg-emerald-500 hover:bg-emerald-500 text-white"
+                            : hasAddressChanges
+                              ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                              : "bg-muted text-muted-foreground cursor-not-allowed"
+                        }`}
+                      >
+                        {addressSaveSuccess ? (
+                          <span className="flex items-center gap-1.5">
+                            <Check className="h-3.5 w-3.5" />
+                            Saved
+                          </span>
+                        ) : (
+                          "Save Address"
+                        )}
+                      </Button>
+                    </div>
+                  )}
+
                   {/* Consent & Agreement Policy - Offline only */}
                   {item.channel !== "Online" && (<>
                   {/* Divider */}
@@ -1078,18 +1096,18 @@ export default function WorkDetailPage({
               {/* Save Button */}
               <div className="pt-1">
                 <Button
-                  onClick={handleSave}
+                  onClick={handleSaveWorkStatus}
                   size="sm"
-                  disabled={(!hasChanges && !saveSuccess) || !isEditable}
+                  disabled={(!hasWorkStatusChanges && !workStatusSaveSuccess) || !isEditable}
                   className={`w-full h-8 text-xs transition-all ${
-                    saveSuccess
+                    workStatusSaveSuccess
                       ? "bg-emerald-500 hover:bg-emerald-500 text-white"
-                      : hasChanges && isEditable
+                      : hasWorkStatusChanges && isEditable
                         ? "bg-primary hover:bg-primary/90 text-primary-foreground"
                         : "bg-muted text-muted-foreground cursor-not-allowed"
                   }`}
                 >
-                  {saveSuccess ? (
+                  {workStatusSaveSuccess ? (
                     <span className="flex items-center gap-1.5">
                       <Check className="h-3.5 w-3.5" />
                       Saved
@@ -1379,6 +1397,13 @@ export default function WorkDetailPage({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Invoice Modal */}
+      <InvoiceModal
+        open={invoiceModalOpen}
+        onOpenChange={setInvoiceModalOpen}
+        item={item as any}
+      />
     </div>
   )
 }

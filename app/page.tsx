@@ -2,7 +2,14 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { ChevronRight } from "lucide-react"
+import { ChevronRight, Truck } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { AppHeader } from "@/components/app-header"
 import { FilterSection } from "@/components/lens-work/filter-section"
 import { WorkTable, type WorkItem } from "@/components/lens-work/work-table"
@@ -83,6 +90,8 @@ export default function LensWorkManagement() {
   const [selectedInvoiceItem, setSelectedInvoiceItem] = useState<WorkItem | null>(null)
   const [outboundModalOpen, setOutboundModalOpen] = useState(false)
   const [outboundSelectedItems, setOutboundSelectedItems] = useState<WorkItem[]>([])
+  const [shipmentPhase, setShipmentPhase] = useState<"outbound" | "label" | "labelPrint">("outbound")
+  const [labelRegConfirmOpen, setLabelRegConfirmOpen] = useState(false)
   const [pickingListModalOpen, setPickingListModalOpen] = useState(false)
   const [pickingListItems, setPickingListItems] = useState<WorkItem[]>([])
 
@@ -118,8 +127,15 @@ export default function LensWorkManagement() {
   }
 
   const handleCreateShipment = (selectedItems: WorkItem[]) => {
-    setOutboundSelectedItems(selectedItems)
-    setOutboundModalOpen(true)
+    if (shipmentPhase === "outbound") {
+      setOutboundSelectedItems(selectedItems)
+      setOutboundModalOpen(true)
+    } else if (shipmentPhase === "label") {
+      setLabelRegConfirmOpen(true)
+    } else if (shipmentPhase === "labelPrint") {
+      setPickingListItems(outboundSelectedItems)
+      setPickingListModalOpen(true)
+    }
   }
 
   return (
@@ -170,6 +186,7 @@ export default function LensWorkManagement() {
             onExcelDownload={handleExcelDownload}
             onWorkLabelPrint={handleWorkLabelPrint}
             onCreateShipment={handleCreateShipment}
+            shipmentPhase={shipmentPhase}
           />
 
           {/* Invoice Modal */}
@@ -185,9 +202,48 @@ export default function LensWorkManagement() {
             onOpenChange={setOutboundModalOpen}
             selectedItems={outboundSelectedItems}
             onComplete={() => {
-              setOutboundSelectedItems([])
+              setShipmentPhase("label")
             }}
           />
+
+          {/* Label Registration Confirm Dialog (TMS) */}
+          <Dialog open={labelRegConfirmOpen} onOpenChange={setLabelRegConfirmOpen}>
+            <DialogContent className="max-w-sm">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-sm">
+                  <Truck className="h-4 w-4" />
+                  Label Registration
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-1">
+                <div className="text-xs text-muted-foreground bg-muted/50 rounded-md p-3">
+                  <span className="font-medium text-foreground">{outboundSelectedItems.length} orders</span>
+                  <span className="ml-2">
+                    {outboundSelectedItems.map((item) => item.orderNumber).join(", ")}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Selected orders will be sent to TMS for label registration. Do you want to proceed?
+                </p>
+                <div className="flex justify-end">
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      console.log("TMS Label Registration:", {
+                        items: outboundSelectedItems.map((item) => item.id),
+                      })
+                      setShipmentPhase("labelPrint")
+                      setLabelRegConfirmOpen(false)
+                    }}
+                    className="h-8 text-xs px-4 gap-1.5"
+                  >
+                    <Truck className="h-3.5 w-3.5" />
+                    Confirm
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Picking List Modal */}
           <PickingListModal

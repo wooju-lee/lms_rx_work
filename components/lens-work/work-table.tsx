@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { FileText, Printer, Info, ChevronLeft, ChevronRight, Download, FileSpreadsheet, Tag, Send, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
+import { FileText, Printer, Info, ChevronLeft, ChevronRight, Download, FileSpreadsheet, Tag, Send, ArrowUpDown, ArrowUp, ArrowDown, Package, Truck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -51,6 +51,8 @@ export interface WorkItem {
   leadTime?: number
 }
 
+type ShipmentPhase = "outbound" | "label" | "labelPrint"
+
 interface WorkTableProps {
   data: WorkItem[]
   onDetailClick: (item: WorkItem, tab: "customer" | "store") => void
@@ -60,6 +62,7 @@ interface WorkTableProps {
   onExcelDownload: () => void
   onWorkLabelPrint: (selectedItems: WorkItem[]) => void
   onCreateShipment: (selectedItems: WorkItem[]) => void
+  shipmentPhase?: ShipmentPhase
 }
 
 // Calculate lead time (리드타임) in days
@@ -114,7 +117,7 @@ const getStatusBadge = (status: WorkItem["status"]) => {
 type SortField = "orderDate" | "approvalDate" | "leadTime" | "completionDate"
 type SortDirection = "asc" | "desc"
 
-export function WorkTable({ data, onDetailClick, onInvoicePrint, onPickingListPrint, onShippingTransmit, onExcelDownload, onWorkLabelPrint, onCreateShipment }: WorkTableProps) {
+export function WorkTable({ data, onDetailClick, onInvoicePrint, onPickingListPrint, onShippingTransmit, onExcelDownload, onWorkLabelPrint, onCreateShipment, shipmentPhase = "outbound" }: WorkTableProps) {
   const [selectedItems, setSelectedItems] = useState<string[]>([])
   const [activeTab, setActiveTab] = useState<"customer" | "store">("customer")
   const [downloadPopoverOpen, setDownloadPopoverOpen] = useState(false)
@@ -260,11 +263,22 @@ export function WorkTable({ data, onDetailClick, onInvoicePrint, onPickingListPr
                 const selected = filteredData.filter((item) => selectedItems.includes(item.id))
                 onCreateShipment(selected)
               }}
-              disabled={selectedItems.length === 0}
-              className="gap-2 border-border bg-background hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={shipmentPhase === "outbound" ? selectedItems.length === 0 : false}
+              className={`gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                shipmentPhase === "label"
+                  ? "border-indigo-300 text-indigo-600 hover:bg-indigo-50 bg-background"
+                  : shipmentPhase === "labelPrint"
+                    ? "border-green-300 text-green-600 hover:bg-green-50 bg-background"
+                    : "border-border bg-background hover:bg-muted"
+              }`}
             >
-              Outbound Registration
-              {selectedItems.length > 0 && (
+              {shipmentPhase === "label" && <Truck className="h-4 w-4" />}
+              {shipmentPhase === "labelPrint" && <Printer className="h-4 w-4" />}
+              {shipmentPhase === "outbound" && <Package className="h-4 w-4" />}
+              {shipmentPhase === "outbound" && "Outbound Registration"}
+              {shipmentPhase === "label" && "Label Registration"}
+              {shipmentPhase === "labelPrint" && "Label Print"}
+              {shipmentPhase === "outbound" && selectedItems.length > 0 && (
                 <Badge variant="secondary" className="ml-1 h-5 min-w-5 px-1.5">
                   {selectedItems.length}
                 </Badge>

@@ -19,42 +19,64 @@ interface InvoiceModalProps {
 
 // Mock invoice data based on order
 const getInvoiceData = (item: WorkItem) => {
+  const isOnline = item.channel === "Online"
   return {
-    invoiceNumber: item.orderNumber,
-    invoiceDate: new Date().toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    }),
-    customer: {
-      name: "John Doe",
-      email: "john.doe@email.com",
-      shippingAddress: "123 Main Street, Los Angeles, California, 90001, United States",
-      billingAddress: "123 Main Street, Los Angeles, California, 90001, United States",
-    },
-    paymentMethod: "Paying with Debit or Credit Card",
+    orderNumber: `#${item.number || "313222"}`,
+    orderDate: "Dec 28, 2025",
+    shippingAddress: isOnline
+      ? {
+          name: item.customer?.name || "Lucille Chao",
+          address: item.customer?.address1 || "1777 Wycliffe Lane",
+          cityStateZip: `${item.customer?.city || "San Ramon"}, ${item.customer?.state || "CA"} ${item.customer?.zip || "94582"}`,
+          country: "United States",
+          tel: `Tel. ${item.customer?.phone || "+19258958088"}`,
+        }
+      : {
+          name: `${item.storeCode} / ${item.storeName}`,
+          address: "Store Address Line 1",
+          cityStateZip: "Store City, ST 00000",
+          country: "United States",
+          tel: "",
+        },
+    customerInfo: isOnline
+      ? {
+          name: item.customer?.name || "Lucille Chao",
+          address: item.customer?.address1 || "1777 Wycliffe Lane",
+          cityStateZip: `${item.customer?.city || "San Ramon"}, ${item.customer?.state || "CA"} ${item.customer?.zip || "94582"}`,
+          country: "United States",
+          tel: `Tel. ${item.customer?.phone || "+19258958088"}`,
+        }
+      : {
+          name: `${item.storeCode} / ${item.storeName}`,
+          address: "Store Address Line 1",
+          cityStateZip: "Store City, ST 00000",
+          country: "United States",
+          tel: "",
+        },
     items: [
       {
-        category: "Frame Used for Prescription Lenses",
-        name: "Odd 01",
-        variant: "Black / Clear",
-        quantity: 1,
-        price: 315,
-        total: 315,
+        category: "FRAMES",
+        name: "ALTO-01",
+        sku: "SKU: ALTO-01",
+        description: "",
+        price: 305.0,
+        tax: 0.0,
+        qty: 1,
+        itemTotal: 305.0,
       },
       {
-        category: "Prescription Lenses",
-        name: "SINGLE VISION IMPACT-RESISTANT POLYCARBONATE",
-        variant: "UV PROTECTION PLATINUM AR COATING",
-        quantity: 1,
-        price: 240,
-        total: 240,
+        category: "LENS",
+        name: "POLY-AR",
+        sku: "SKU: POLY-AR",
+        description: "Rx Single Vision, Polycarbonate, U.V400 and premium AR Coating",
+        price: 240.0,
+        tax: 0.0,
+        qty: 1,
+        itemTotal: 240.0,
       },
     ],
-    subtotal: 555,
-    shipping: "FREE",
-    salesTax: 0,
-    total: 555,
+    subtotal: 545.0,
+    total: 545.0,
   }
 }
 
@@ -69,7 +91,7 @@ export function InvoiceModal({ open, onOpenChange, item }: InvoiceModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-center text-xl">Invoice Preview</DialogTitle>
           <DialogDescription className="sr-only">
@@ -78,80 +100,102 @@ export function InvoiceModal({ open, onOpenChange, item }: InvoiceModalProps) {
         </DialogHeader>
 
         {/* Invoice Content */}
-        <div className="bg-white p-6 border rounded-lg" id="invoice-content">
-          {/* Brand Header */}
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold tracking-wide">GENTLE MONSTER</h1>
-          </div>
-
-          {/* Invoice Number */}
-          <div className="text-center mb-4">
-            <p className="text-base font-bold">INVOICE #{invoice.invoiceNumber}</p>
-          </div>
-
-          {/* Date */}
-          <div className="mb-6">
-            <p className="text-sm text-muted-foreground">{invoice.invoiceDate}</p>
-          </div>
-
-          {/* Customer Information */}
-          <div className="mb-6">
-            <h2 className="font-semibold text-sm mb-3">CUSTOMER INFORMATION</h2>
-            <div>
-              <p className="text-sm font-medium text-primary mb-1">Shipping Address</p>
-              <p className="text-sm text-muted-foreground">{invoice.customer.name}</p>
-              <p className="text-sm text-muted-foreground">{invoice.customer.shippingAddress}</p>
+        <div className="bg-white p-8 border rounded-lg" id="invoice-content">
+          {/* Header */}
+          <div className="flex justify-between items-start mb-2">
+            <h1 className="text-2xl font-bold tracking-wide" style={{ fontFamily: "'Times New Roman', 'Georgia', serif" }}>GENTLE MONSTER USA</h1>
+            <div className="text-right">
+              <p className="text-sm font-bold text-orange-500">{invoice.orderNumber}</p>
+              <p className="text-sm text-muted-foreground">{invoice.orderDate}</p>
             </div>
           </div>
 
-          {/* Order Summary */}
-          <div className="mb-6">
-            <h2 className="font-semibold text-sm mb-4">ORDER INFORMATION</h2>
-            
-            {/* Header */}
-            <div className="grid grid-cols-12 gap-2 mb-3 text-sm font-medium border-b pb-2">
-              <div className="col-span-6">Item</div>
-              <div className="col-span-2 text-center">QUANTITY</div>
+          {/* Red divider */}
+          <div className="h-0.5 bg-orange-400 mb-6" />
+
+          {/* Shipping Address & Customer */}
+          <div className="grid grid-cols-2 gap-8 mb-8">
+            <div>
+              <p className="text-xs font-bold tracking-wider text-muted-foreground mb-3">SHIPPING ADDRESS</p>
+              <p className="text-sm">{invoice.shippingAddress.name}</p>
+              <p className="text-sm">{invoice.shippingAddress.address}</p>
+              <p className="text-sm">{invoice.shippingAddress.cityStateZip}</p>
+              <p className="text-sm">{invoice.shippingAddress.country}</p>
+              {invoice.shippingAddress.tel && (
+                <p className="text-sm">{invoice.shippingAddress.tel}</p>
+              )}
+            </div>
+            <div>
+              <p className="text-xs font-bold tracking-wider text-muted-foreground mb-3">CUSTOMER</p>
+              <p className="text-sm">{invoice.customerInfo.name}</p>
+              <p className="text-sm">{invoice.customerInfo.address}</p>
+              <p className="text-sm">{invoice.customerInfo.cityStateZip}</p>
+              <p className="text-sm">{invoice.customerInfo.country}</p>
+              {invoice.customerInfo.tel && (
+                <p className="text-sm">{invoice.customerInfo.tel}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Items Table */}
+          <div className="mb-8">
+            {/* Table Header */}
+            <div className="grid grid-cols-12 gap-2 text-xs font-bold tracking-wider text-muted-foreground border-b border-muted pb-2 mb-4">
+              <div className="col-span-5">ITEMS</div>
               <div className="col-span-2 text-right">PRICE</div>
-              <div className="col-span-2 text-right">TOTAL</div>
+              <div className="col-span-1 text-right">TAX</div>
+              <div className="col-span-1 text-center">QTY</div>
+              <div className="col-span-3 text-right">ITEM TOTAL</div>
             </div>
 
             {/* Items */}
             {invoice.items.map((orderItem, index) => (
-              <div key={index} className="mb-4">
-                <p className="text-xs text-muted-foreground mb-2">{orderItem.category}</p>
-                <div className="grid grid-cols-12 gap-2 items-center">
-                  <div className="col-span-6">
-                    <p className="text-sm font-medium">{orderItem.name}</p>
-                    <p className="text-xs text-muted-foreground">{orderItem.variant}</p>
+              <div key={index} className="grid grid-cols-12 gap-2 items-start py-4 border-b border-muted/50">
+                <div className="col-span-5">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-bold tracking-wider bg-muted px-2 py-0.5 rounded">
+                      {orderItem.category}
+                    </span>
+                    <span className="text-sm font-semibold">{orderItem.name}</span>
                   </div>
-                  <div className="col-span-2 text-center text-sm">{orderItem.quantity}</div>
-                  <div className="col-span-2 text-right text-sm">${orderItem.price}</div>
-                  <div className="col-span-2 text-right text-sm">${orderItem.total}</div>
+                  <p className="text-xs text-muted-foreground">{orderItem.sku}</p>
+                  {orderItem.description && (
+                    <p className="text-xs text-muted-foreground mt-1">{orderItem.description}</p>
+                  )}
                 </div>
+                <div className="col-span-2 text-right text-sm">${orderItem.price.toFixed(2)}</div>
+                <div className="col-span-1 text-right text-sm">${orderItem.tax.toFixed(2)}</div>
+                <div className="col-span-1 text-center text-sm">{orderItem.qty}</div>
+                <div className="col-span-3 text-right text-sm">${orderItem.itemTotal.toFixed(2)}</div>
               </div>
             ))}
+          </div>
 
-            {/* Total */}
-            <div className="border-t pt-4 mt-4">
-              <div className="flex justify-between font-semibold text-base">
-                <span>Total</span>
-                <div className="text-right">
-                  <span>${invoice.total}</span>
-                  <p className="text-xs text-muted-foreground font-normal">Taxes and duties included</p>
-                </div>
+          {/* Totals */}
+          <div className="flex justify-end mb-12">
+            <div className="w-64 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Subtotal</span>
+                <span>${invoice.subtotal.toFixed(2)}</span>
+              </div>
+              <div className="border-t border-muted pt-2" />
+              <div className="flex justify-between text-sm font-bold">
+                <span>TOTAL (USD)</span>
+                <span>${invoice.total.toFixed(2)}</span>
               </div>
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="border-t pt-4 mt-6">
-            <p className="text-sm mb-4">Thank you for shopping with us.</p>
-            <div className="text-xs text-muted-foreground">
-              <p className="font-semibold text-foreground">GENTLE MONSTER USA</p>
-              <p>2211 E Howell Ave., Anaheim, CA, 92806, United States</p>
-              <p>rx@gentlemonsterusa.com</p>
-              <p>gentlemonsterusa.com</p>
+          {/* Thank you message */}
+          <div className="border-t border-muted/50 pt-8 pb-4">
+            <p className="text-sm text-center text-muted-foreground mb-8">Thank you for shopping with us!</p>
+
+            {/* Footer */}
+            <div className="text-center text-sm">
+              <p className="font-bold mb-1">Gentle Monster USA</p>
+              <p className="text-muted-foreground">2211 E Howell Ave., Anaheim, CA, 92806, United States</p>
+              <p className="text-muted-foreground">cs.us@gentlemonster.com</p>
+              <p className="text-muted-foreground">gentlemonster.store</p>
             </div>
           </div>
         </div>
