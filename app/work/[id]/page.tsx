@@ -417,104 +417,100 @@ export default function WorkDetailPage({
             Back to List
           </button>
 
-          {/* Header */}
-          <div className="grid grid-cols-4 gap-4 mb-3">
-            {/* Left side - Order info and Worker */}
-            <div className="col-span-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <h1 className="text-base font-bold">{item.orderNumber}</h1>
-                {getStatusBadge(item.status)}
-                <Badge variant="outline" className={`px-3 py-1 font-medium ${
-                  item.channel === "Online"
-                    ? "text-green-600 border-green-600"
-                    : "text-blue-600 border-blue-600"
-                }`}>
-                  {item.channel}
-                </Badge>
-              </div>
+          {/* Header - Row 1: Order info + Worker */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <h1 className="text-base font-bold">{item.orderNumber}</h1>
+              {getStatusBadge(item.status)}
+              <Badge variant="outline" className={`px-3 py-1 font-medium ${
+                item.channel === "Online"
+                  ? "text-green-600 border-green-600"
+                  : "text-blue-600 border-blue-600"
+              }`}>
+                {item.channel}
+              </Badge>
+            </div>
 
-              {/* Worker */}
-              <div className="flex items-center gap-2 text-xs">
-                <span className="text-muted-foreground">Worker</span>
-                <Select defaultValue="monster1437" disabled={!isEditable}>
-                  <SelectTrigger className={`w-[160px] h-7 text-xs ${!isEditable ? "opacity-60 cursor-not-allowed" : ""}`}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="monster1437">monster1437 (Wooju lee)</SelectItem>
-                    <SelectItem value="sam_01">sam_01</SelectItem>
-                    <SelectItem value="sam_02">sam_02</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            {/* Worker */}
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-muted-foreground">Worker</span>
+              <Select defaultValue="monster1437" disabled={!isEditable}>
+                <SelectTrigger className={`w-[160px] h-7 text-xs ${!isEditable ? "opacity-60 cursor-not-allowed" : ""}`}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="monster1437">monster1437 (Wooju lee)</SelectItem>
+                  <SelectItem value="sam_01">sam_01</SelectItem>
+                  <SelectItem value="sam_02">sam_02</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            {/* Right side - Action Buttons */}
-            <div className="col-span-1 flex items-center justify-between">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSerialPrint}
-                className="gap-1.5 bg-transparent h-7 text-xs px-2.5"
-              >
-                <Printer className="h-3.5 w-3.5" />
-                Serial Print
-              </Button>
-              <div className="flex items-center gap-1.5">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleWorkPrint}
-                className="gap-1.5 bg-transparent h-7 text-xs px-2.5"
-              >
-                <Package className="h-3.5 w-3.5" />
-                Picking List
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleInvoicePrint}
-                className="gap-1.5 bg-transparent h-7 text-xs px-2.5"
-              >
-                <FileText className="h-3.5 w-3.5" />
-                Invoice
-              </Button>
-              {isCustomerTab ? (
-              outboundRegistered ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setLabelRegConfirmOpen(true)}
-                disabled={labelRegistered}
-                className="gap-1.5 bg-transparent h-7 text-xs px-2.5 border-indigo-300 text-indigo-600 hover:bg-indigo-50"
-              >
-                <Truck className="h-3.5 w-3.5" />
-                Label Registration
-              </Button>
-              ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setOutboundConfirmOpen(true)}
-                className="gap-1.5 bg-transparent h-7 text-xs px-2.5"
-              >
-                <Package className="h-3.5 w-3.5" />
-                Outbound Registration
-              </Button>
-              )
-              ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLabelPrint}
-                disabled={!isLabelPrintEnabled}
-                className="gap-1.5 bg-transparent h-7 text-xs px-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Printer className="h-3.5 w-3.5" />
-                Label Print
-              </Button>
-              )}
-              </div>
-            </div>
+          </div>
+
+          {/* Header - Row 2: Action Buttons */}
+          <div className="flex items-center justify-end gap-1.5 mb-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSerialPrint}
+              className="gap-1.5 bg-transparent h-7 text-xs px-2.5"
+            >
+              <Printer className="h-3.5 w-3.5" />
+              Serial Print
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleWorkPrint}
+              className="gap-1.5 bg-transparent h-7 text-xs px-2.5"
+            >
+              <Package className="h-3.5 w-3.5" />
+              Picking List
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleInvoicePrint}
+              className="gap-1.5 bg-transparent h-7 text-xs px-2.5"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              Invoice
+            </Button>
+            {isCustomerTab ? (
+            outboundRegistered ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setLabelRegConfirmOpen(true)}
+              disabled={labelRegistered}
+              className="gap-1.5 bg-transparent h-7 text-xs px-2.5 border-indigo-300 text-indigo-600 hover:bg-indigo-50"
+            >
+              <Truck className="h-3.5 w-3.5" />
+              Label Registration
+            </Button>
+            ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setOutboundConfirmOpen(true)}
+              className="gap-1.5 bg-transparent h-7 text-xs px-2.5"
+            >
+              <Package className="h-3.5 w-3.5" />
+              Outbound Registration
+            </Button>
+            )
+            ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLabelPrint}
+              disabled={!isLabelPrintEnabled}
+              className="gap-1.5 bg-transparent h-7 text-xs px-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Printer className="h-3.5 w-3.5" />
+              Label Print
+            </Button>
+            )}
           </div>
 
           <div className="grid grid-cols-4 gap-4">
