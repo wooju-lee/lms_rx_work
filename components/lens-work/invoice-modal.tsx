@@ -21,7 +21,8 @@ interface InvoiceModalProps {
 const getInvoiceData = (item: WorkItem) => {
   const isOnline = item.channel === "Online"
   return {
-    orderNumber: `#${item.number || "313222"}`,
+    orderNo: item.orderNumber,
+    number: item.number || "-",
     orderDate: "Dec 28, 2025",
     shippingAddress: isOnline
       ? {
@@ -105,8 +106,9 @@ export function InvoiceModal({ open, onOpenChange, item }: InvoiceModalProps) {
           <div className="flex justify-between items-start mb-2">
             <h1 className="text-2xl font-bold tracking-wide" style={{ fontFamily: "'Times New Roman', 'Georgia', serif" }}>GENTLE MONSTER USA</h1>
             <div className="text-right">
-              <p className="text-sm font-bold text-orange-500">{invoice.orderNumber}</p>
-              <p className="text-sm text-muted-foreground">{invoice.orderDate}</p>
+              <p className="text-sm font-bold text-orange-500">#{invoice.orderNo}</p>
+              <p className="text-xs text-muted-foreground">({invoice.number})</p>
+              <p className="text-sm text-muted-foreground mt-1">{invoice.orderDate}</p>
             </div>
           </div>
 
