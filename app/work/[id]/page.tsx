@@ -219,6 +219,7 @@ export default function WorkDetailPage({
   const item = getWorkItem(id)
 
   // Editable work status fields
+  const [worker, setWorker] = useState(item.worker || "")
   const [workStatus, setWorkStatus] = useState(item.status)
   const [workType, setWorkType] = useState(item.workType)
   const [processingPeriod, setProcessingPeriod] = useState(item.processingPeriod)
@@ -233,6 +234,7 @@ export default function WorkDetailPage({
 
   // Saved values (to track changes after save)
   const [savedValues, setSavedValues] = useState({
+    worker: item.worker || "",
     workStatus: item.status,
     workType: item.workType,
     processingPeriod: item.processingPeriod,
@@ -268,12 +270,13 @@ export default function WorkDetailPage({
   // Cancel/Return modal state
   const [cancelModalOpen, setCancelModalOpen] = useState(false)
   const [returnModalOpen, setReturnModalOpen] = useState(false)
-  const [cancelReturnHistory, setCancelReturnHistory] = useState<{
-    type: "cancel" | "return"
-    reason: string
-    subReason?: string
+
+  // Detail history entries (newest first)
+  const [historyEntries, setHistoryEntries] = useState<{
+    type: "cancel" | "return" | "status"
     timestamp: string
-  } | null>(null)
+    changes: { label: string; value: string; badgeClass: string }[]
+  }[]>([])
 
   // Outbound/Label registration state
   const [outboundConfirmOpen, setOutboundConfirmOpen] = useState(false)
@@ -302,6 +305,7 @@ export default function WorkDetailPage({
 
   // Track work status changes
   const hasWorkStatusChanges =
+    worker !== savedValues.worker ||
     workStatus !== savedValues.workStatus ||
     workType !== savedValues.workType ||
     processingPeriod !== savedValues.processingPeriod
@@ -317,8 +321,26 @@ export default function WorkDetailPage({
   }
 
   const handleSaveWorkStatus = () => {
-    console.log("Saving work status:", { workStatus, workType, processingPeriod })
-    setSavedValues((prev) => ({ ...prev, workStatus, workType, processingPeriod }))
+    console.log("Saving work status:", { worker, workStatus, workType, processingPeriod })
+    const now = new Date()
+    const timestamp = `${now.getFullYear()}. ${String(now.getMonth() + 1).padStart(2, "0")}.${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")} (PST)`
+    const changes: { label: string; value: string; badgeClass: string }[] = []
+    if (worker !== savedValues.worker) {
+      changes.push({ label: "Worker", value: `${savedValues.worker || "-"} → ${worker}`, badgeClass: "bg-teal-50 text-teal-700 border-teal-200" })
+    }
+    if (workStatus !== savedValues.workStatus) {
+      changes.push({ label: "Status", value: `${savedValues.workStatus} → ${workStatus}`, badgeClass: "bg-blue-50 text-blue-700 border-blue-200" })
+    }
+    if (workType !== savedValues.workType) {
+      changes.push({ label: "Type", value: `${savedValues.workType || "-"} → ${workType || "-"}`, badgeClass: "bg-purple-50 text-purple-700 border-purple-200" })
+    }
+    if (processingPeriod !== savedValues.processingPeriod) {
+      changes.push({ label: "Period", value: `${savedValues.processingPeriod || "-"} → ${processingPeriod || "-"}`, badgeClass: "bg-green-50 text-green-700 border-green-200" })
+    }
+    if (changes.length > 0) {
+      setHistoryEntries((prev) => [{ type: "status", timestamp, changes }, ...prev])
+    }
+    setSavedValues((prev) => ({ ...prev, worker, workStatus, workType, processingPeriod }))
     setWorkStatusSaveSuccess(true)
     setTimeout(() => setWorkStatusSaveSuccess(false), 2000)
   }
@@ -1043,7 +1065,7 @@ export default function WorkDetailPage({
                 <CardContent className="space-y-3 text-xs px-4 pb-3">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-muted-foreground font-bold shrink-0 flex items-center gap-1.5"><UserCog className="h-3 w-3" />Worker</span>
-                    <Select defaultValue={item.worker} disabled={!isEditable}>
+                    <Select value={worker || undefined} onValueChange={setWorker} disabled={!isEditable}>
                       <SelectTrigger className={`w-[150px] h-7 text-xs ${!isEditable ? "opacity-60 cursor-not-allowed" : ""}`}>
                         <SelectValue placeholder="Select worker" />
                       </SelectTrigger>
@@ -1187,45 +1209,33 @@ export default function WorkDetailPage({
                 <CardContent className="px-4 pb-3">
                   <div className="max-h-[220px] overflow-y-auto pr-1">
                     <div className="space-y-3">
-                      {/* Cancel/Return history entry */}
-                      {cancelReturnHistory && (
-                        <div className="flex gap-2">
+                      {/* Dynamic history entries */}
+                      {historyEntries.map((entry, idx) => (
+                        <div key={`history-${idx}`} className="flex gap-2">
                           <div className="flex flex-col items-center">
-                            <div className={`h-1.5 w-1.5 rounded-full mt-1.5 ${cancelReturnHistory.type === "cancel" ? "bg-red-500" : "bg-amber-500"}`} />
+                            <div className={`h-1.5 w-1.5 rounded-full mt-1.5 ${
+                              entry.type === "cancel" ? "bg-red-500" : entry.type === "return" ? "bg-amber-500" : "bg-[oklch(0.7_0.15_55)]"
+                            }`} />
                             <div className="w-px flex-1 bg-border" />
                           </div>
                           <div className="pb-3 flex-1">
                             <div className="flex items-center justify-between mb-1">
-                              <p className="text-[10px] text-muted-foreground">{cancelReturnHistory.timestamp}</p>
+                              <p className="text-[10px] text-muted-foreground">{entry.timestamp}</p>
                               <p className="text-[10px] text-muted-foreground">monster1437</p>
                             </div>
                             <div className="space-y-1">
-                              <div className="flex items-start gap-1.5">
-                                <Badge variant="outline" className={`text-[10px] shrink-0 px-1.5 py-0 ${
-                                  cancelReturnHistory.type === "cancel"
-                                    ? "bg-red-50 text-red-700 border-red-200"
-                                    : "bg-amber-50 text-amber-700 border-amber-200"
-                                }`}>
-                                  {cancelReturnHistory.type === "cancel" ? "Cancelled" : "Returned"}
-                                </Badge>
-                                <span className="text-xs">
-                                  {item.status} → {cancelReturnHistory.type === "cancel" ? "Cancelled" : "Refunded"}
-                                </span>
-                              </div>
-                              <div className="flex items-start gap-1.5">
-                                <Badge variant="outline" className="text-[10px] shrink-0 bg-gray-50 text-gray-700 border-gray-200 px-1.5 py-0">Reason</Badge>
-                                <span className="text-xs">{cancelReturnHistory.reason}</span>
-                              </div>
-                              {cancelReturnHistory.subReason && (
-                                <div className="flex items-start gap-1.5">
-                                  <Badge variant="outline" className="text-[10px] shrink-0 bg-gray-50 text-gray-700 border-gray-200 px-1.5 py-0">Sub Reason</Badge>
-                                  <span className="text-xs">{cancelReturnHistory.subReason}</span>
+                              {entry.changes.map((change, cIdx) => (
+                                <div key={cIdx} className="flex items-start gap-1.5">
+                                  <Badge variant="outline" className={`text-[10px] shrink-0 px-1.5 py-0 ${change.badgeClass}`}>
+                                    {change.label}
+                                  </Badge>
+                                  <span className="text-xs">{change.value}</span>
                                 </div>
-                              )}
+                              ))}
                             </div>
                           </div>
                         </div>
-                      )}
+                      ))}
                       {/* Multiple changes in one save */}
                       <div className="flex gap-2">
                         <div className="flex flex-col items-center">
@@ -1507,12 +1517,14 @@ export default function WorkDetailPage({
         onComplete={(info) => {
           const now = new Date()
           const timestamp = `${now.getFullYear()}. ${String(now.getMonth() + 1).padStart(2, "0")}.${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")} (PST)`
-          setCancelReturnHistory({
-            type: "cancel",
-            reason: info.reason,
-            subReason: info.subReason,
-            timestamp,
-          })
+          const changes = [
+            { label: "Cancelled", value: `${item.status} → Cancelled`, badgeClass: "bg-red-50 text-red-700 border-red-200" },
+            { label: "Reason", value: info.reason, badgeClass: "bg-gray-50 text-gray-700 border-gray-200" },
+          ]
+          if (info.subReason) {
+            changes.push({ label: "Sub Reason", value: info.subReason, badgeClass: "bg-gray-50 text-gray-700 border-gray-200" })
+          }
+          setHistoryEntries((prev) => [{ type: "cancel", timestamp, changes }, ...prev])
         }}
       />
 
@@ -1526,12 +1538,14 @@ export default function WorkDetailPage({
         onComplete={(info) => {
           const now = new Date()
           const timestamp = `${now.getFullYear()}. ${String(now.getMonth() + 1).padStart(2, "0")}.${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")} (PST)`
-          setCancelReturnHistory({
-            type: "return",
-            reason: info.reason,
-            subReason: info.subReason,
-            timestamp,
-          })
+          const changes = [
+            { label: "Returned", value: `${item.status} → Refunded`, badgeClass: "bg-amber-50 text-amber-700 border-amber-200" },
+            { label: "Reason", value: info.reason, badgeClass: "bg-gray-50 text-gray-700 border-gray-200" },
+          ]
+          if (info.subReason) {
+            changes.push({ label: "Sub Reason", value: info.subReason, badgeClass: "bg-gray-50 text-gray-700 border-gray-200" })
+          }
+          setHistoryEntries((prev) => [{ type: "return", timestamp, changes }, ...prev])
         }}
       />
     </div>
