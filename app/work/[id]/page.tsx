@@ -21,6 +21,12 @@ import {
   Plus,
   Check,
   Info,
+  UserCog,
+  Activity,
+  Wrench,
+  Clock,
+  XCircle,
+  RotateCcw,
 } from "lucide-react"
 import {
   Tooltip,
@@ -59,6 +65,7 @@ import {
 } from "@/components/ui/table"
 import { InvoiceModal } from "@/components/lens-work/invoice-modal"
 import { LabelPrintModal } from "@/components/lens-work/label-print-modal"
+import { CancelReturnModal, getCancelAvailability, getReturnAvailability } from "@/components/lens-work/cancel-return-modal"
 import { toast } from "sonner"
 
 // Replicate list page data generation to keep detail in sync
@@ -258,12 +265,22 @@ export default function WorkDetailPage({
   // Label print modal state (To Store)
   const [labelPrintModalOpen, setLabelPrintModalOpen] = useState(false)
 
+  // Cancel/Return modal state
+  const [cancelModalOpen, setCancelModalOpen] = useState(false)
+  const [returnModalOpen, setReturnModalOpen] = useState(false)
+  const [cancelReturnHistory, setCancelReturnHistory] = useState<{
+    type: "cancel" | "return"
+    reason: string
+    subReason?: string
+    timestamp: string
+  } | null>(null)
+
   // Outbound/Label registration state
   const [outboundConfirmOpen, setOutboundConfirmOpen] = useState(false)
   const [labelRegConfirmOpen, setLabelRegConfirmOpen] = useState(false)
   const [labelRegistered, setLabelRegistered] = useState(false)
-  // To Store: 3-phase flow (outbound → label → labelPrint)
-  const [storeShipmentPhase, setStoreShipmentPhase] = useState<"outbound" | "label" | "labelPrint">("outbound")
+  // To Store: outbound registration state
+  const [storeOutboundRegistered, setStoreOutboundRegistered] = useState(false)
 
   // Check if editable based on status (Completed and Finalized are read-only)
   const isEditable = !["Completed", "Finalized"].includes(item.status)
@@ -437,20 +454,6 @@ export default function WorkDetailPage({
               </Badge>
             </div>
 
-            {/* Worker */}
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-muted-foreground">Worker</span>
-              <Select defaultValue="monster1437" disabled={!isEditable}>
-                <SelectTrigger className={`w-[160px] h-7 text-xs ${!isEditable ? "opacity-60 cursor-not-allowed" : ""}`}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="monster1437">monster1437 (Wooju lee)</SelectItem>
-                  <SelectItem value="sam_01">sam_01</SelectItem>
-                  <SelectItem value="sam_02">sam_02</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
 
           {/* Header - Row 2: Action Buttons */}
@@ -495,38 +498,17 @@ export default function WorkDetailPage({
               Label Registration
             </Button>
             ) : (
-            /* To Store: 3-phase flow (B2B - 출고등록 → 송장등록 → 송장출력) */
-            storeShipmentPhase === "outbound" ? (
+            /* To Store: Outbound Registration only (B2B - 출고등록) */
             <Button
               variant="outline"
               size="sm"
               onClick={() => setOutboundConfirmOpen(true)}
-              className="gap-1.5 bg-transparent h-7 text-xs px-2.5"
+              disabled={storeOutboundRegistered}
+              className="gap-1.5 bg-transparent h-7 text-xs px-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Package className="h-3.5 w-3.5" />
               Outbound Registration
             </Button>
-            ) : storeShipmentPhase === "label" ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setLabelRegConfirmOpen(true)}
-              className="gap-1.5 bg-transparent h-7 text-xs px-2.5 border-indigo-300 text-indigo-600 hover:bg-indigo-50"
-            >
-              <Truck className="h-3.5 w-3.5" />
-              Label Registration
-            </Button>
-            ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLabelPrint}
-              className="gap-1.5 bg-transparent h-7 text-xs px-2.5 border-green-300 text-green-600 hover:bg-green-50"
-            >
-              <Printer className="h-3.5 w-3.5" />
-              Label Print
-            </Button>
-            )
             )}
           </div>
 
@@ -1060,10 +1042,23 @@ export default function WorkDetailPage({
                 </CardHeader>
                 <CardContent className="space-y-3 text-xs px-4 pb-3">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-muted-foreground font-bold shrink-0">Work Status</span>
+                    <span className="text-muted-foreground font-bold shrink-0 flex items-center gap-1.5"><UserCog className="h-3 w-3" />Worker</span>
+                    <Select defaultValue={item.worker} disabled={!isEditable}>
+                      <SelectTrigger className={`w-[150px] h-7 text-xs ${!isEditable ? "opacity-60 cursor-not-allowed" : ""}`}>
+                        <SelectValue placeholder="Select worker" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="monster1437">monster1437</SelectItem>
+                        <SelectItem value="sam_01">sam_01</SelectItem>
+                        <SelectItem value="sam_02">sam_02</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-muted-foreground font-bold shrink-0 flex items-center gap-1.5"><Activity className="h-3 w-3" />Work Status</span>
                     <Select value={workStatus} onValueChange={setWorkStatus} disabled={!isEditable}>
                       <SelectTrigger className={`w-[150px] h-7 text-xs ${!isEditable ? "opacity-60 cursor-not-allowed" : ""}`}>
-                        <SelectValue />
+                        <SelectValue placeholder="Select status" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Pending">Pending</SelectItem>
@@ -1076,10 +1071,10 @@ export default function WorkDetailPage({
                     </Select>
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-muted-foreground font-bold shrink-0">Work Type</span>
-                    <Select value={workType} onValueChange={setWorkType} disabled={!isEditable}>
+                    <span className="text-muted-foreground font-bold shrink-0 flex items-center gap-1.5"><Wrench className="h-3 w-3" />Work Type</span>
+                    <Select value={workType || undefined} onValueChange={setWorkType} disabled={!isEditable}>
                       <SelectTrigger className={`w-[150px] h-7 text-xs ${!isEditable ? "opacity-60 cursor-not-allowed" : ""}`}>
-                        <SelectValue placeholder="-" />
+                        <SelectValue placeholder="Select type" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="-">-</SelectItem>
@@ -1089,10 +1084,10 @@ export default function WorkDetailPage({
                     </Select>
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-muted-foreground font-bold shrink-0">Processing Period</span>
-                    <Select value={processingPeriod} onValueChange={setProcessingPeriod} disabled={!isEditable}>
+                    <span className="text-muted-foreground font-bold shrink-0 flex items-center gap-1.5"><Clock className="h-3 w-3" />Processing Period</span>
+                    <Select value={processingPeriod || undefined} onValueChange={setProcessingPeriod} disabled={!isEditable}>
                       <SelectTrigger className={`w-[150px] h-7 text-xs ${!isEditable ? "opacity-60 cursor-not-allowed" : ""}`}>
-                        <SelectValue placeholder="-" />
+                        <SelectValue placeholder="Select period" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="-">-</SelectItem>
@@ -1107,12 +1102,12 @@ export default function WorkDetailPage({
               </Card>
 
               {/* Save Button */}
-              <div className="pt-1">
+              <div className="flex justify-end pt-1">
                 <Button
                   onClick={handleSaveWorkStatus}
                   size="sm"
                   disabled={(!hasWorkStatusChanges && !workStatusSaveSuccess) || !isEditable}
-                  className={`w-full h-8 text-xs transition-all ${
+                  className={`h-7 text-xs px-4 transition-all ${
                     workStatusSaveSuccess
                       ? "bg-emerald-500 hover:bg-emerald-500 text-white"
                       : hasWorkStatusChanges && isEditable
@@ -1192,6 +1187,45 @@ export default function WorkDetailPage({
                 <CardContent className="px-4 pb-3">
                   <div className="max-h-[220px] overflow-y-auto pr-1">
                     <div className="space-y-3">
+                      {/* Cancel/Return history entry */}
+                      {cancelReturnHistory && (
+                        <div className="flex gap-2">
+                          <div className="flex flex-col items-center">
+                            <div className={`h-1.5 w-1.5 rounded-full mt-1.5 ${cancelReturnHistory.type === "cancel" ? "bg-red-500" : "bg-amber-500"}`} />
+                            <div className="w-px flex-1 bg-border" />
+                          </div>
+                          <div className="pb-3 flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                              <p className="text-[10px] text-muted-foreground">{cancelReturnHistory.timestamp}</p>
+                              <p className="text-[10px] text-muted-foreground">monster1437</p>
+                            </div>
+                            <div className="space-y-1">
+                              <div className="flex items-start gap-1.5">
+                                <Badge variant="outline" className={`text-[10px] shrink-0 px-1.5 py-0 ${
+                                  cancelReturnHistory.type === "cancel"
+                                    ? "bg-red-50 text-red-700 border-red-200"
+                                    : "bg-amber-50 text-amber-700 border-amber-200"
+                                }`}>
+                                  {cancelReturnHistory.type === "cancel" ? "Cancelled" : "Returned"}
+                                </Badge>
+                                <span className="text-xs">
+                                  {item.status} → {cancelReturnHistory.type === "cancel" ? "Cancelled" : "Refunded"}
+                                </span>
+                              </div>
+                              <div className="flex items-start gap-1.5">
+                                <Badge variant="outline" className="text-[10px] shrink-0 bg-gray-50 text-gray-700 border-gray-200 px-1.5 py-0">Reason</Badge>
+                                <span className="text-xs">{cancelReturnHistory.reason}</span>
+                              </div>
+                              {cancelReturnHistory.subReason && (
+                                <div className="flex items-start gap-1.5">
+                                  <Badge variant="outline" className="text-[10px] shrink-0 bg-gray-50 text-gray-700 border-gray-200 px-1.5 py-0">Sub Reason</Badge>
+                                  <span className="text-xs">{cancelReturnHistory.subReason}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       {/* Multiple changes in one save */}
                       <div className="flex gap-2">
                         <div className="flex flex-col items-center">
@@ -1244,29 +1278,51 @@ export default function WorkDetailPage({
                 </CardContent>
               </Card>
 
-              {/* 작업 취소 */}
-              {isEditable && (
-                <div className="flex justify-end mt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs px-2.5 text-red-400 border-red-200 hover:bg-red-50 hover:text-red-500"
-                    onClick={() => {
-                      // Check if outbound shipment is in transit
-                      if (item.outboundTracking) {
-                        alert("Cannot cancel this work.\n\nAn outbound shipment is currently in transit. Please resolve the shipment before cancelling.")
-                        return
-                      }
-                      if (confirm("Are you sure you want to cancel this work?\n\nThis action cannot be undone.")) {
-                        console.log("Work cancelled:", item.id)
-                        router.push("/")
-                      }
-                    }}
-                  >
-                    Cancel Work
-                  </Button>
-                </div>
-              )}
+              {/* Cancel / Return Buttons */}
+              {(() => {
+                const cancelInfo = getCancelAvailability(
+                  item.channel,
+                  item.status,
+                  item.outboundTracking,
+                )
+                const returnInfo = getReturnAvailability(
+                  item.channel,
+                  item.status,
+                  item.outboundTracking,
+                )
+                return (
+                  <div className="flex justify-end gap-2 mt-2">
+                    {returnInfo.canReturn && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs px-2.5 text-amber-500 border-amber-200 hover:bg-amber-50 hover:text-amber-600 gap-1"
+                        onClick={() => setReturnModalOpen(true)}
+                      >
+                        <RotateCcw className="h-3 w-3" />
+                        Return
+                      </Button>
+                    )}
+                    {cancelInfo.canCancel && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs px-2.5 text-red-400 border-red-200 hover:bg-red-50 hover:text-red-500 gap-1"
+                        onClick={() => {
+                          if (cancelInfo.errorMessage) {
+                            toast.error(cancelInfo.errorMessage)
+                            return
+                          }
+                          setCancelModalOpen(true)
+                        }}
+                      >
+                        <XCircle className="h-3 w-3" />
+                        Cancel Work
+                      </Button>
+                    )}
+                  </div>
+                )
+              })()}
 
             </div>
           </div>
@@ -1362,9 +1418,9 @@ export default function WorkDetailPage({
                 size="sm"
                 onClick={() => {
                   console.log("ERP Outbound Registration:", { orderId: item.id })
-                  setStoreShipmentPhase("label")
-                  setWorkStatus("Completed")
+                  setStoreOutboundRegistered(true)
                   setOutboundConfirmOpen(false)
+                  toast.success("Outbound registration completed. Order has been sent to TMS.")
                 }}
                 className="h-8 text-xs px-4 gap-1.5"
               >
@@ -1400,14 +1456,9 @@ export default function WorkDetailPage({
                     orderId: item.id,
                   })
                   setLabelRegConfirmOpen(false)
-                  if (isCustomerTab) {
-                    // To Customer: TMS 전달 완료 토스트 → 버튼 비활성화
-                    setLabelRegistered(true)
-                    toast.success("Label registration has been sent to TMS successfully.")
-                  } else {
-                    // To Store: Label Print 단계로 전환
-                    setStoreShipmentPhase("labelPrint")
-                  }
+                  // To Customer: TMS 전달 완료 토스트 → 버튼 비활성화
+                  setLabelRegistered(true)
+                  toast.success("Label registration has been sent to TMS successfully.")
                 }}
                 className="h-8 text-xs px-4 gap-1.5"
               >
@@ -1443,6 +1494,44 @@ export default function WorkDetailPage({
             state: item.customer.state,
             zip: item.customer.zip,
           },
+        }}
+      />
+
+      {/* Cancel Modal */}
+      <CancelReturnModal
+        open={cancelModalOpen}
+        onOpenChange={setCancelModalOpen}
+        type="cancel"
+        orderId={item.id}
+        orderNumber={item.orderNumber}
+        onComplete={(info) => {
+          const now = new Date()
+          const timestamp = `${now.getFullYear()}. ${String(now.getMonth() + 1).padStart(2, "0")}.${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")} (PST)`
+          setCancelReturnHistory({
+            type: "cancel",
+            reason: info.reason,
+            subReason: info.subReason,
+            timestamp,
+          })
+        }}
+      />
+
+      {/* Return Modal */}
+      <CancelReturnModal
+        open={returnModalOpen}
+        onOpenChange={setReturnModalOpen}
+        type="return"
+        orderId={item.id}
+        orderNumber={item.orderNumber}
+        onComplete={(info) => {
+          const now = new Date()
+          const timestamp = `${now.getFullYear()}. ${String(now.getMonth() + 1).padStart(2, "0")}.${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")} (PST)`
+          setCancelReturnHistory({
+            type: "return",
+            reason: info.reason,
+            subReason: info.subReason,
+            timestamp,
+          })
         }}
       />
     </div>

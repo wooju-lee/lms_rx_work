@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Check, Package, Truck } from "lucide-react"
+import { Package, Truck } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -31,16 +31,7 @@ interface OutboundModalProps {
 const EXCLUDED_STATUSES = ["Completed", "Finalized"]
 
 export function OutboundModal({ open, onOpenChange, selectedItems, onComplete }: OutboundModalProps) {
-  const [isCompleted, setIsCompleted] = useState(false)
-
   const eligibleItems = selectedItems.filter((item) => !EXCLUDED_STATUSES.includes(item.status))
-
-  const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen) {
-      setIsCompleted(false)
-    }
-    onOpenChange(newOpen)
-  }
 
   const handleConfirm = () => {
     console.log("TMS Outbound Registration:", {
@@ -51,16 +42,13 @@ export function OutboundModal({ open, onOpenChange, selectedItems, onComplete }:
         storeName: item.storeName,
       })),
     })
-    setIsCompleted(true)
-  }
-
-  const handleClose = () => {
     onComplete()
-    handleOpenChange(false)
+    onOpenChange(false)
+    toast.success(`Outbound registration completed. ${eligibleItems.length} orders have been sent to TMS.`)
   }
 
   return (
-    <Dialog open={open && selectedItems.length > 0} onOpenChange={handleOpenChange}>
+    <Dialog open={open && selectedItems.length > 0} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-center text-lg">Outbound Shipment</DialogTitle>
@@ -130,24 +118,12 @@ export function OutboundModal({ open, onOpenChange, selectedItems, onComplete }:
             </div>
           </div>
 
-          {isCompleted ? (
-            <div className="flex items-center justify-between mt-6">
-              <div className="flex items-center gap-2 text-sm text-green-600">
-                <Check className="h-4 w-4" />
-                <span>Outbound registration completed. Orders have been sent to TMS.</span>
-              </div>
-              <Button onClick={handleClose}>
-                OK
-              </Button>
-            </div>
-          ) : (
-            <div className="flex justify-end gap-2 mt-6">
-              <Button onClick={handleConfirm} disabled={eligibleItems.length === 0} className="gap-2">
-                <Package className="h-4 w-4" />
-                Register Outbound
-              </Button>
-            </div>
-          )}
+          <div className="flex justify-end gap-2 mt-6">
+            <Button onClick={handleConfirm} disabled={eligibleItems.length === 0} className="gap-2">
+              <Package className="h-4 w-4" />
+              Register Outbound
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
