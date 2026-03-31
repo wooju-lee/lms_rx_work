@@ -58,6 +58,8 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { InvoiceModal } from "@/components/lens-work/invoice-modal"
+import { LabelPrintModal } from "@/components/lens-work/label-print-modal"
+import { toast } from "sonner"
 
 // Replicate list page data generation to keep detail in sync
 const getListItemData = (numId: number) => {
@@ -253,11 +255,15 @@ export default function WorkDetailPage({
   // Invoice modal state
   const [invoiceModalOpen, setInvoiceModalOpen] = useState(false)
 
-  // Outbound registration state (for To Customer tab)
-  const [outboundRegistered, setOutboundRegistered] = useState(false)
+  // Label print modal state (To Store)
+  const [labelPrintModalOpen, setLabelPrintModalOpen] = useState(false)
+
+  // Outbound/Label registration state
   const [outboundConfirmOpen, setOutboundConfirmOpen] = useState(false)
   const [labelRegConfirmOpen, setLabelRegConfirmOpen] = useState(false)
   const [labelRegistered, setLabelRegistered] = useState(false)
+  // To Store: 3-phase flow (outbound → label → labelPrint)
+  const [storeShipmentPhase, setStoreShipmentPhase] = useState<"outbound" | "label" | "labelPrint">("outbound")
 
   // Check if editable based on status (Completed and Finalized are read-only)
   const isEditable = !["Completed", "Finalized"].includes(item.status)
@@ -309,7 +315,7 @@ export default function WorkDetailPage({
   }
 
   const handleLabelPrint = () => {
-    // Print paper invoice for B2B re-shipment
+    setLabelPrintModalOpen(true)
   }
 
   const handleSerialPrint = () => {
@@ -477,18 +483,20 @@ export default function WorkDetailPage({
               Invoice
             </Button>
             {isCustomerTab ? (
-            outboundRegistered ? (
+            /* To Customer: Label Registration only (B2C - TMS 송장 등록만) */
             <Button
               variant="outline"
               size="sm"
               onClick={() => setLabelRegConfirmOpen(true)}
               disabled={labelRegistered}
-              className="gap-1.5 bg-transparent h-7 text-xs px-2.5 border-indigo-300 text-indigo-600 hover:bg-indigo-50"
+              className="gap-1.5 bg-transparent h-7 text-xs px-2.5 border-indigo-300 text-indigo-600 hover:bg-indigo-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Truck className="h-3.5 w-3.5" />
               Label Registration
             </Button>
             ) : (
+            /* To Store: 3-phase flow (B2B - 출고등록 → 송장등록 → 송장출력) */
+            storeShipmentPhase === "outbound" ? (
             <Button
               variant="outline"
               size="sm"
@@ -498,18 +506,27 @@ export default function WorkDetailPage({
               <Package className="h-3.5 w-3.5" />
               Outbound Registration
             </Button>
-            )
+            ) : storeShipmentPhase === "label" ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setLabelRegConfirmOpen(true)}
+              className="gap-1.5 bg-transparent h-7 text-xs px-2.5 border-indigo-300 text-indigo-600 hover:bg-indigo-50"
+            >
+              <Truck className="h-3.5 w-3.5" />
+              Label Registration
+            </Button>
             ) : (
             <Button
               variant="outline"
               size="sm"
               onClick={handleLabelPrint}
-              disabled={!isLabelPrintEnabled}
-              className="gap-1.5 bg-transparent h-7 text-xs px-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="gap-1.5 bg-transparent h-7 text-xs px-2.5 border-green-300 text-green-600 hover:bg-green-50"
             >
               <Printer className="h-3.5 w-3.5" />
               Label Print
             </Button>
+            )
             )}
           </div>
 
@@ -1324,7 +1341,7 @@ export default function WorkDetailPage({
           ))}
         </div>
       )}
-      {/* Outbound Registration Confirm Dialog (ERP) */}
+      {/* Outbound Registration Confirm Dialog (ERP) - To Store only */}
       <Dialog open={outboundConfirmOpen} onOpenChange={setOutboundConfirmOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
@@ -1344,7 +1361,8 @@ export default function WorkDetailPage({
               <Button
                 size="sm"
                 onClick={() => {
-                  setOutboundRegistered(true)
+                  console.log("ERP Outbound Registration:", { orderId: item.id })
+                  setStoreShipmentPhase("label")
                   setWorkStatus("Completed")
                   setOutboundConfirmOpen(false)
                 }}
@@ -1381,8 +1399,15 @@ export default function WorkDetailPage({
                   console.log("TMS Label Registration:", {
                     orderId: item.id,
                   })
-                  setLabelRegistered(true)
                   setLabelRegConfirmOpen(false)
+                  if (isCustomerTab) {
+                    // To Customer: TMS 전달 완료 토스트 → 버튼 비활성화
+                    setLabelRegistered(true)
+                    toast.success("Label registration has been sent to TMS successfully.")
+                  } else {
+                    // To Store: Label Print 단계로 전환
+                    setStoreShipmentPhase("labelPrint")
+                  }
                 }}
                 className="h-8 text-xs px-4 gap-1.5"
               >
@@ -1399,6 +1424,26 @@ export default function WorkDetailPage({
         open={invoiceModalOpen}
         onOpenChange={setInvoiceModalOpen}
         item={item as any}
+      />
+
+      {/* Label Print Modal (To Store) */}
+      <LabelPrintModal
+        open={labelPrintModalOpen}
+        onOpenChange={setLabelPrintModalOpen}
+        item={{
+          orderNumber: item.orderNumber,
+          storeCode: item.storeCode,
+          storeName: item.storeName,
+          customer: {
+            name: item.customer.name,
+            phone: item.customer.phone,
+            address1: item.customer.address1,
+            address2: item.customer.address2,
+            city: item.customer.city,
+            state: item.customer.state,
+            zip: item.customer.zip,
+          },
+        }}
       />
     </div>
   )
