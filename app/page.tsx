@@ -39,7 +39,10 @@ const generateSampleData = (): WorkItem[] => {
   
   // 25 Normal, 5 Pre-order
   const preOrderIds = [3, 8, 14, 21, 27] // 5 Pre-order items spread across the list
-  
+  // IDs that have cancel/return status for sample data
+  const cancelIds = [2, 7, 16, 22] // Cancel: only for non-Completed/Finalized
+  const returnIds = [4, 9, 19, 24] // Refund: only for Completed/Finalized
+
   processingPeriods.forEach(({ period, count }) => {
     for (let i = 0; i < count; i++) {
       const status = statuses[id % statuses.length]
@@ -50,7 +53,15 @@ const generateSampleData = (): WorkItem[] => {
         : offlineStores[id % offlineStores.length]
       const isCompleted = status === "Completed" || status === "Finalized"
       const orderType = preOrderIds.includes(id) ? "Pre-order" : "Normal"
-      
+
+      // Cancel/Return status: Cancel only when NOT Completed/Finalized, Return only when Completed/Finalized
+      let cancelReturnStatus: "Cancel" | "Refund" | undefined = undefined
+      if (cancelIds.includes(id) && !isCompleted) {
+        cancelReturnStatus = "Cancel"
+      } else if (returnIds.includes(id) && isCompleted) {
+        cancelReturnStatus = "Refund"
+      }
+
       items.push({
         id: String(id),
         orderDate: `2025-08-${String(10 + (id % 20)).padStart(2, "0")} ${10 + (id % 12)}:00 (PST)`,
@@ -67,6 +78,7 @@ const generateSampleData = (): WorkItem[] => {
         assignee: assignees[id % assignees.length],
         leadTime: 5 + (id % 15),
         completionDate: isCompleted ? `2025-09-${String(1 + (id % 28)).padStart(2, "0")} 11:00 (PST)` : undefined,
+        cancelReturnStatus,
       })
       id++
     }

@@ -216,14 +216,10 @@ export function getReturnAvailability(
   status: string,
   outboundTracking: { trackingNo: string; carrier: string } | null,
 ): { canReturn: boolean; errorMessage?: string } {
-  // 반품은 고객 배송 완료(Finalized) 또는 스토어 입고 완료 상태에서 가능
-  if (status === "Finalized") {
+  // Refund is only available for Completed or Finalized orders
+  if (status === "Completed" || status === "Finalized") {
     return { canReturn: true }
   }
-  // Completed + 배송 중이면 불가
-  if (status === "Completed" && outboundTracking) {
-    return { canReturn: false, errorMessage: CANCEL_ERROR_MESSAGES.shipping }
-  }
-  // 그 외에는 아직 배송 전이므로 반품 대상 아님 (취소로 처리)
+  // All other statuses: not eligible for refund (use cancel instead)
   return { canReturn: false }
 }

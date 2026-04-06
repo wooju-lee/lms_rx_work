@@ -49,6 +49,7 @@ export interface WorkItem {
   assignee?: string
   completionDate?: string
   leadTime?: number
+  cancelReturnStatus?: "Cancel" | "Refund"
 }
 
 
@@ -362,6 +363,7 @@ export function WorkTable({ data, onDetailClick, onInvoicePrint, onPickingListPr
               <span className="text-xs text-muted-foreground">(Code / Name)</span>
             </TableHead>
             <TableHead className="text-center">Work Status</TableHead>
+            <TableHead className="text-center">Cancel / Refund</TableHead>
             <TableHead className="text-center">Work Type</TableHead>
             <TableHead className="text-center">Processing Period</TableHead>
             <TableHead className="text-center">Worker</TableHead>
@@ -444,6 +446,19 @@ export function WorkTable({ data, onDetailClick, onInvoicePrint, onPickingListPr
               </TableCell>
               <TableCell className="text-center">
                 {getStatusBadge(item.status)}
+              </TableCell>
+              <TableCell className="text-center text-sm">
+                {item.cancelReturnStatus === "Cancel" ? (
+                  <Badge variant="outline" className="bg-red-50 text-red-600 border-red-200 px-3 py-1 font-medium">
+                    Cancel
+                  </Badge>
+                ) : item.cancelReturnStatus === "Refund" ? (
+                  <Badge variant="outline" className="bg-orange-50 text-orange-600 border-orange-200 px-3 py-1 font-medium">
+                    Refund
+                  </Badge>
+                ) : (
+                  <span className="text-muted-foreground">-</span>
+                )}
               </TableCell>
               <TableCell className="text-center text-sm">
                 {item.workType || "-"}

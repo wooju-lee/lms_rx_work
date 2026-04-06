@@ -177,6 +177,10 @@ export function FilterSection({ onSearch }: FilterSectionProps) {
             </Select>
           </div>
 
+        </div>
+
+        {/* Second Row - Processing Period, Work Status, Cancel / Refund */}
+        <div className="flex flex-wrap gap-4 mb-5">
           {/* Processing Period */}
           <div className="w-[150px]">
             <label className="block text-sm font-medium text-foreground mb-2">Processing Period</label>
@@ -213,9 +217,24 @@ export function FilterSection({ onSearch }: FilterSectionProps) {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Cancel / Refund - Single Select */}
+          <div className="w-[150px]">
+            <label className="block text-sm font-medium text-foreground mb-2">Cancel / Refund</label>
+            <Select defaultValue="all">
+              <SelectTrigger className="w-full bg-background border-border">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="cancel">Cancel</SelectItem>
+                <SelectItem value="refund">Refund</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        {/* Second Row - Date Range */}
+        {/* Date Range */}
         <div className="mb-5">
           <label className="block text-sm font-medium text-foreground mb-3">Date Search</label>
           <div className="flex items-center gap-3">

@@ -101,7 +101,18 @@ const getListItemData = (numId: number) => {
   const orderType = preOrderIds.includes(numId) ? "Pre-order" : "Normal"
   const period = processingPeriods.find(p => numId >= p.range[0] && numId <= p.range[1])?.period || "-"
 
-  return { status, channel, store, workType: workTypes[numId % workTypes.length], assignee: assignees[numId % assignees.length], orderType, period }
+  // Cancel/Refund status - same logic as list page
+  const isCompleted = status === "Completed" || status === "Finalized"
+  const cancelIds = [2, 7, 16, 22]
+  const returnIds = [4, 9, 19, 24]
+  let cancelReturnStatus: "Cancel" | "Refund" | undefined = undefined
+  if (cancelIds.includes(numId) && !isCompleted) {
+    cancelReturnStatus = "Cancel"
+  } else if (returnIds.includes(numId) && isCompleted) {
+    cancelReturnStatus = "Refund"
+  }
+
+  return { status, channel, store, workType: workTypes[numId % workTypes.length], assignee: assignees[numId % assignees.length], orderType, period, cancelReturnStatus }
 }
 
 // Sample data - in real app, this would come from API
@@ -188,6 +199,7 @@ const getWorkItem = (id: string) => {
     inboundTracking: listData.channel === "Online" ? null : { trackingNo: "7489274892748", carrier: "FedEx" },
     // Outbound tracking exists when outbound registration has been done (Completed/Finalized items have it)
     outboundTracking: isCompleted ? { trackingNo: "9201774892100", carrier: "UPS" } : null,
+    cancelReturnStatus: listData.cancelReturnStatus,
     comments: [
       {
         id: "1",
@@ -271,12 +283,35 @@ export default function WorkDetailPage({
   const [cancelModalOpen, setCancelModalOpen] = useState(false)
   const [returnModalOpen, setReturnModalOpen] = useState(false)
 
-  // Detail history entries (newest first)
+  // Detail history entries (newest first) - seed with existing claim status
   const [historyEntries, setHistoryEntries] = useState<{
     type: "cancel" | "return" | "status"
     timestamp: string
     changes: { label: string; value: string; badgeClass: string }[]
-  }[]>([])
+  }[]>(() => {
+    if (item.cancelReturnStatus === "Cancel") {
+      return [{
+        type: "cancel",
+        timestamp: "2026. 03.12 09:15 (PST)",
+        changes: [
+          { label: "Claim Status", value: "— → CANCELED", badgeClass: "bg-red-50 text-red-700 border-red-200" },
+          { label: "Cancel Reason", value: "— → Do Not Process", badgeClass: "bg-gray-50 text-gray-700 border-gray-200" },
+          { label: "Cancel Sub Reason", value: "— → Customer request", badgeClass: "bg-gray-50 text-gray-700 border-gray-200" },
+        ],
+      }]
+    }
+    if (item.cancelReturnStatus === "Refund") {
+      return [{
+        type: "return",
+        timestamp: "2026. 03.14 11:30 (PST)",
+        changes: [
+          { label: "Claim Status", value: "— → REFUNDED", badgeClass: "bg-amber-50 text-amber-700 border-amber-200" },
+          { label: "Refund Reason", value: "— → Change of Mind", badgeClass: "bg-gray-50 text-gray-700 border-gray-200" },
+        ],
+      }]
+    }
+    return []
+  })
 
   // Outbound/Label registration state
   const [outboundConfirmOpen, setOutboundConfirmOpen] = useState(false)
@@ -1288,8 +1323,8 @@ export default function WorkDetailPage({
                 </CardContent>
               </Card>
 
-              {/* Cancel / Return Buttons */}
-              {(() => {
+              {/* Cancel / Return Buttons - hidden when already cancelled or refunded */}
+              {!item.cancelReturnStatus && (() => {
                 const cancelInfo = getCancelAvailability(
                   item.channel,
                   item.status,
@@ -1310,7 +1345,7 @@ export default function WorkDetailPage({
                         onClick={() => setReturnModalOpen(true)}
                       >
                         <RotateCcw className="h-3 w-3" />
-                        Return
+                        Refund
                       </Button>
                     )}
                     {cancelInfo.canCancel && (
@@ -1518,11 +1553,11 @@ export default function WorkDetailPage({
           const now = new Date()
           const timestamp = `${now.getFullYear()}. ${String(now.getMonth() + 1).padStart(2, "0")}.${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")} (PST)`
           const changes = [
-            { label: "Cancelled", value: `${item.status} → Cancelled`, badgeClass: "bg-red-50 text-red-700 border-red-200" },
-            { label: "Reason", value: info.reason, badgeClass: "bg-gray-50 text-gray-700 border-gray-200" },
+            { label: "Claim Status", value: "— → CANCELED", badgeClass: "bg-red-50 text-red-700 border-red-200" },
+            { label: "Cancel Reason", value: `— → ${info.reason}`, badgeClass: "bg-gray-50 text-gray-700 border-gray-200" },
           ]
           if (info.subReason) {
-            changes.push({ label: "Sub Reason", value: info.subReason, badgeClass: "bg-gray-50 text-gray-700 border-gray-200" })
+            changes.push({ label: "Cancel Sub Reason", value: `— → ${info.subReason}`, badgeClass: "bg-gray-50 text-gray-700 border-gray-200" })
           }
           setHistoryEntries((prev) => [{ type: "cancel", timestamp, changes }, ...prev])
         }}
@@ -1539,11 +1574,11 @@ export default function WorkDetailPage({
           const now = new Date()
           const timestamp = `${now.getFullYear()}. ${String(now.getMonth() + 1).padStart(2, "0")}.${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")} (PST)`
           const changes = [
-            { label: "Returned", value: `${item.status} → Refunded`, badgeClass: "bg-amber-50 text-amber-700 border-amber-200" },
-            { label: "Reason", value: info.reason, badgeClass: "bg-gray-50 text-gray-700 border-gray-200" },
+            { label: "Claim Status", value: "— → REFUNDED", badgeClass: "bg-amber-50 text-amber-700 border-amber-200" },
+            { label: "Refund Reason", value: `— → ${info.reason}`, badgeClass: "bg-gray-50 text-gray-700 border-gray-200" },
           ]
           if (info.subReason) {
-            changes.push({ label: "Sub Reason", value: info.subReason, badgeClass: "bg-gray-50 text-gray-700 border-gray-200" })
+            changes.push({ label: "Refund Sub Reason", value: `— → ${info.subReason}`, badgeClass: "bg-gray-50 text-gray-700 border-gray-200" })
           }
           setHistoryEntries((prev) => [{ type: "return", timestamp, changes }, ...prev])
         }}
