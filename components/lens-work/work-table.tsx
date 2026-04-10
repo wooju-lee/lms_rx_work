@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { FileText, Printer, Info, ChevronLeft, ChevronRight, Download, FileSpreadsheet, Tag, Send, ArrowUpDown, ArrowUp, ArrowDown, Package } from "lucide-react"
+import { FileText, Printer, Info, ChevronLeft, ChevronRight, Download, FileSpreadsheet, Tag, Send, ArrowUpDown, ArrowUp, ArrowDown, Package, Truck, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -31,6 +31,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 export interface WorkItem {
   id: string
@@ -42,13 +48,14 @@ export interface WorkItem {
   channel: "Online" | "Offline"
   storeCode: string
   storeName: string
-  status: "Pending" | "Inbound Inspection" | "In Progress" | "Outbound Inspection"
+  status: "Pending" | "Inbound Inspection" | "In Progress" | "Re Do" | "Outbound Inspection" | "Outbound Inspection Completed" | "Completed" | "Finalized"
   outboundRegistered?: boolean
   workType?: string
   processingPeriod?: string
   assignee?: string
   completionDate?: string
   leadTime?: number
+  workEta?: string
   cancelReturnStatus?: "Cancel" | "Refund"
 }
 
@@ -62,7 +69,11 @@ interface WorkTableProps {
   onExcelDownload: () => void
   onWorkLabelPrint: (selectedItems: WorkItem[]) => void
   onCreateShipment: (selectedItems: WorkItem[]) => void
+  onLabelRegistration: (selectedItems: WorkItem[]) => void
+  onLabelPrint: (selectedItems: WorkItem[]) => void
+  onBulkStatusChange: (selectedItems: WorkItem[], newStatus: string) => void
   outboundRegisteredIds?: Set<string>
+  labelRegisteredIds?: Set<string>
 }
 
 // Calculate lead time (리드타임) in days
@@ -98,8 +109,10 @@ const getLeadTimeDisplay = (days: number, isOngoing: boolean) => {
 const getStatusBadge = (status: WorkItem["status"]) => {
   const statusStyles: Record<WorkItem["status"], string> = {
     Pending: "bg-[oklch(0.92_0.12_85)] text-[oklch(0.45_0.12_70)] border-[oklch(0.85_0.15_85)]",
-    Inspection: "bg-[oklch(0.75_0.16_55)] text-white border-transparent",
+    "Inbound Inspection": "bg-[oklch(0.75_0.16_55)] text-white border-transparent",
     "In Progress": "bg-[oklch(0.7_0.15_145)] text-white border-transparent",
+    "Re Do": "bg-orange-500 text-white border-transparent",
+    "Outbound Inspection Completed": "bg-teal-500 text-white border-transparent",
     Completed: "bg-[oklch(0.6_0.15_145)] text-white border-transparent",
     Finalized: "bg-transparent text-[oklch(0.5_0.12_145)] border-[oklch(0.7_0.15_145)]",
   }
@@ -117,10 +130,21 @@ const getStatusBadge = (status: WorkItem["status"]) => {
 type SortField = "orderDate" | "approvalDate" | "leadTime" | "completionDate"
 type SortDirection = "asc" | "desc"
 
-export function WorkTable({ data, onDetailClick, onInvoicePrint, onPickingListPrint, onShippingTransmit, onExcelDownload, onWorkLabelPrint, onCreateShipment, outboundRegisteredIds = new Set() }: WorkTableProps) {
+const MANUAL_STATUSES = [
+  "Pending",
+  "Inbound Inspection",
+  "In Progress",
+  "Re Do",
+  "Outbound Inspection",
+  "Outbound Inspection Completed",
+]
+
+export function WorkTable({ data, onDetailClick, onInvoicePrint, onPickingListPrint, onShippingTransmit, onExcelDownload, onWorkLabelPrint, onCreateShipment, onLabelRegistration, onLabelPrint, onBulkStatusChange, outboundRegisteredIds = new Set(), labelRegisteredIds = new Set() }: WorkTableProps) {
   const [selectedItems, setSelectedItems] = useState<string[]>([])
   const [activeTab, setActiveTab] = useState<"customer" | "store">("customer")
   const [downloadPopoverOpen, setDownloadPopoverOpen] = useState(false)
+  const [statusChangeModalOpen, setStatusChangeModalOpen] = useState(false)
+  const [selectedNewStatus, setSelectedNewStatus] = useState<string>("")
   const [sortField, setSortField] = useState<SortField>("orderDate")
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc")
   
@@ -239,23 +263,41 @@ export function WorkTable({ data, onDetailClick, onInvoicePrint, onPickingListPr
           <span className="text-sm font-bold">{filteredData.length}</span>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => {
-              const selected = filteredData.filter((item) => selectedItems.includes(item.id))
-              onPickingListPrint(selected)
-            }}
-            disabled={selectedItems.length === 0}
-            className="gap-2 border-border bg-background hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Printer className="h-4 w-4" />
-            Picking List
-            {selectedItems.length > 0 && (
-              <Badge variant="secondary" className="ml-1 h-5 min-w-5 px-1.5">
-                {selectedItems.length}
-              </Badge>
-            )}
-          </Button>
+          {activeTab === "customer" && (() => {
+            const selectedData = filteredData.filter((item) => selectedItems.includes(item.id))
+            const hasEligible = selectedData.some((item) => item.status === "Outbound Inspection Completed" && !labelRegisteredIds.has(item.id))
+            return (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  onLabelRegistration(selectedData)
+                }}
+                disabled={selectedItems.length === 0 || !hasEligible}
+                className="gap-2 disabled:opacity-50 disabled:cursor-not-allowed border-indigo-300 text-indigo-600 hover:bg-indigo-50"
+              >
+                <Truck className="h-4 w-4" />
+                Label Registration
+              </Button>
+            )
+          })()}
+          {activeTab === "customer" && (() => {
+            const selectedData = filteredData.filter((item) => selectedItems.includes(item.id))
+            const hasCompletedItems = selectedData.some((item) => item.status === "Completed")
+            return (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const printable = selectedData.filter((item) => item.status === "Completed")
+                  onLabelPrint(printable)
+                }}
+                disabled={selectedItems.length === 0 || !hasCompletedItems}
+                className="gap-2 disabled:opacity-50 disabled:cursor-not-allowed border-emerald-300 text-emerald-600 hover:bg-emerald-50"
+              >
+                <Printer className="h-4 w-4" />
+                Label Print
+              </Button>
+            )
+          })()}
           {activeTab === "store" && (() => {
             const allSelectedRegistered = selectedItems.length > 0 && selectedItems.every((id) => outboundRegisteredIds.has(id))
             return (
@@ -270,14 +312,35 @@ export function WorkTable({ data, onDetailClick, onInvoicePrint, onPickingListPr
               >
                 <Package className="h-4 w-4" />
                 Outbound Registration
-                {selectedItems.length > 0 && !allSelectedRegistered && (
-                  <Badge variant="secondary" className="ml-1 h-5 min-w-5 px-1.5">
-                    {selectedItems.length}
-                  </Badge>
-                )}
               </Button>
             )
           })()}
+          <div className="w-px h-5 bg-gray-400" />
+          <Button
+            variant="outline"
+            onClick={() => {
+              setSelectedNewStatus("")
+              setStatusChangeModalOpen(true)
+            }}
+            disabled={selectedItems.length === 0 || !filteredData.filter((item) => selectedItems.includes(item.id)).every((item) => MANUAL_STATUSES.includes(item.status))}
+            className="gap-2 border-border bg-background hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Change Status
+          </Button>
+          <div className="w-px h-5 bg-gray-400" />
+          <Button
+            variant="outline"
+            onClick={() => {
+              const selected = filteredData.filter((item) => selectedItems.includes(item.id))
+              onPickingListPrint(selected)
+            }}
+            disabled={selectedItems.length === 0}
+            className="gap-2 border-border bg-background hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Printer className="h-4 w-4" />
+            Picking List
+          </Button>
           <Popover open={downloadPopoverOpen} onOpenChange={setDownloadPopoverOpen}>
             <PopoverTrigger asChild>
               <Button 
@@ -349,6 +412,7 @@ export function WorkTable({ data, onDetailClick, onInvoicePrint, onPickingListPr
                 {getSortIcon("approvalDate")}
               </button>
             </TableHead>
+            <TableHead className="text-center">Work ETA</TableHead>
             <TableHead className="text-center">Channel</TableHead>
             <TableHead className="text-center py-4">
               <div className="leading-relaxed">
@@ -413,6 +477,9 @@ export function WorkTable({ data, onDetailClick, onInvoicePrint, onPickingListPr
               </TableCell>
               <TableCell className="text-center text-sm">
                 {item.approvalDate || item.orderDate}
+              </TableCell>
+              <TableCell className="text-center text-sm whitespace-nowrap">
+                {item.workEta || "-"}
               </TableCell>
               <TableCell className="text-center">
                 <div className="flex items-center justify-center gap-2">
@@ -537,6 +604,51 @@ export function WorkTable({ data, onDetailClick, onInvoicePrint, onPickingListPr
           </Button>
         </div>
       </div>
+      {/* Change Status Modal */}
+      <Dialog open={statusChangeModalOpen} onOpenChange={setStatusChangeModalOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-sm">
+              <RefreshCw className="h-4 w-4" />
+              Change Status
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-1">
+            <div className="text-xs text-muted-foreground">
+              {selectedItems.length} Order(s)
+            </div>
+            <Select value={selectedNewStatus} onValueChange={setSelectedNewStatus}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                {MANUAL_STATUSES.map((status) => (
+                  <SelectItem key={status} value={status}>{status}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedNewStatus === "Outbound Inspection Completed" && (
+              <p className="text-xs text-indigo-500">
+                * Label Registration will be automatically processed via TMS.
+              </p>
+            )}
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                disabled={!selectedNewStatus}
+                onClick={() => {
+                  const selected = filteredData.filter((item) => selectedItems.includes(item.id))
+                  onBulkStatusChange(selected, selectedNewStatus)
+                  setStatusChangeModalOpen(false)
+                }}
+                className="h-8 text-xs px-4 gap-1.5"
+              >
+                Confirm
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

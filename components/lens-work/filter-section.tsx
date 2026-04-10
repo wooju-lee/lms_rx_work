@@ -25,6 +25,26 @@ interface FilterSectionProps {
 
 type QuickDate = "today" | "week" | "month" | "3months"
 
+const PERIOD_OPTIONS = [
+  { value: "basic-iic", label: "(Basic) IIC Lab" },
+  { value: "basic-lab1", label: "(Basic) Lab 1" },
+  { value: "basic-lab2", label: "(Basic) Lab 2" },
+  { value: "tint-iic", label: "(Tint) IIC Lab" },
+  { value: "tint-lab1", label: "(Tint) Lab 1" },
+  { value: "tint-lab2", label: "(Tint) Lab 2" },
+]
+
+const STATUS_OPTIONS = [
+  { value: "pending", label: "Pending" },
+  { value: "inbound-inspection", label: "Inbound Inspection" },
+  { value: "in-progress", label: "In Progress" },
+  { value: "re-do", label: "Re Do" },
+  { value: "outbound-inspection", label: "Outbound Inspection" },
+  { value: "outbound-inspection-completed", label: "Outbound Inspection Completed" },
+  { value: "completed", label: "Completed" },
+  { value: "finalized", label: "Finalized" },
+]
+
 const BP_OPTIONS = [
   { value: "C1002", label: "C1002 미국 법인", prefix: "US" },
   { value: "C1003", label: "C1003 캐나다 법인", prefix: "CA" },
@@ -53,6 +73,8 @@ export function FilterSection({ onSearch }: FilterSectionProps) {
   const [quickDate, setQuickDate] = useState<QuickDate | null>(null)
   const [selectedBP, setSelectedBP] = useState<string>("")
   const [selectedStores, setSelectedStores] = useState<string[]>([])
+  const [selectedPeriods, setSelectedPeriods] = useState<string[]>([])
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([])
 
   const currentStoreOptions = selectedBP ? (STORE_OPTIONS_BY_BP[selectedBP] ?? []) : []
 
@@ -181,41 +203,86 @@ export function FilterSection({ onSearch }: FilterSectionProps) {
 
         {/* Second Row - Processing Period, Work Status, Cancel / Refund */}
         <div className="flex flex-wrap gap-4 mb-5">
-          {/* Processing Period */}
-          <div className="w-[150px]">
+          {/* Processing Period - Multi Select */}
+          <div className="w-[170px]">
             <label className="block text-sm font-medium text-foreground mb-2">Processing Period</label>
-            <Select defaultValue="all">
-              <SelectTrigger className="w-full bg-background border-border">
-                <SelectValue placeholder="All" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="basic-iic">(Basic) IIC Lab</SelectItem>
-                <SelectItem value="basic-lab1">(Basic) Lab 1</SelectItem>
-                <SelectItem value="basic-lab2">(Basic) Lab 2</SelectItem>
-                <SelectItem value="tint-iic">(Tint) IIC Lab</SelectItem>
-                <SelectItem value="tint-lab1">(Tint) Lab 1</SelectItem>
-                <SelectItem value="tint-lab2">(Tint) Lab 2</SelectItem>
-              </SelectContent>
-            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-between bg-background border-border font-normal"
+                >
+                  {selectedPeriods.length === 0
+                    ? "All"
+                    : selectedPeriods.length === PERIOD_OPTIONS.length
+                    ? "All Selected"
+                    : `${selectedPeriods.length} selected`}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[200px] p-2" align="start">
+                <div className="space-y-1">
+                  <div
+                    className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer"
+                    onClick={() => setSelectedPeriods(prev => prev.length === PERIOD_OPTIONS.length ? [] : PERIOD_OPTIONS.map(o => o.value))}
+                  >
+                    <Checkbox checked={selectedPeriods.length === PERIOD_OPTIONS.length} />
+                    <span className="text-sm font-medium">Select All</span>
+                  </div>
+                  <div className="border-t my-1" />
+                  {PERIOD_OPTIONS.map((opt) => (
+                    <div
+                      key={opt.value}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer"
+                      onClick={() => setSelectedPeriods(prev => prev.includes(opt.value) ? prev.filter(v => v !== opt.value) : [...prev, opt.value])}
+                    >
+                      <Checkbox checked={selectedPeriods.includes(opt.value)} />
+                      <span className="text-sm">{opt.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
 
-          {/* Work Status */}
-          <div className="w-[130px]">
+          {/* Work Status - Multi Select */}
+          <div className="w-[170px]">
             <label className="block text-sm font-medium text-foreground mb-2">Work Status</label>
-            <Select defaultValue="all">
-              <SelectTrigger className="w-full bg-background border-border">
-                <SelectValue placeholder="All" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="inspection">Inspection</SelectItem>
-                <SelectItem value="in-progress">In Progress</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="finalized">Finalized</SelectItem>
-              </SelectContent>
-            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-between bg-background border-border font-normal"
+                >
+                  {selectedStatuses.length === 0
+                    ? "All"
+                    : selectedStatuses.length === STATUS_OPTIONS.length
+                    ? "All Selected"
+                    : `${selectedStatuses.length} selected`}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[260px] p-2" align="start">
+                <div className="space-y-1">
+                  <div
+                    className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer"
+                    onClick={() => setSelectedStatuses(prev => prev.length === STATUS_OPTIONS.length ? [] : STATUS_OPTIONS.map(o => o.value))}
+                  >
+                    <Checkbox checked={selectedStatuses.length === STATUS_OPTIONS.length} />
+                    <span className="text-sm font-medium">Select All</span>
+                  </div>
+                  <div className="border-t my-1" />
+                  {STATUS_OPTIONS.map((opt) => (
+                    <div
+                      key={opt.value}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer"
+                      onClick={() => setSelectedStatuses(prev => prev.includes(opt.value) ? prev.filter(v => v !== opt.value) : [...prev, opt.value])}
+                    >
+                      <Checkbox checked={selectedStatuses.includes(opt.value)} />
+                      <span className="text-sm">{opt.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Cancel / Refund - Single Select */}

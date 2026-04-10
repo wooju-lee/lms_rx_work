@@ -27,6 +27,7 @@ import {
   Clock,
   XCircle,
   RotateCcw,
+  CalendarIcon,
 } from "lucide-react"
 import {
   Tooltip,
@@ -55,6 +56,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { format } from "date-fns"
 import {
   Table,
   TableBody,
@@ -70,7 +74,7 @@ import { toast } from "sonner"
 
 // Replicate list page data generation to keep detail in sync
 const getListItemData = (numId: number) => {
-  const statuses = ["Pending", "Inspection", "In Progress", "Completed", "Finalized"]
+  const statuses = ["Pending", "Inbound Inspection", "In Progress", "Re Do", "Outbound Inspection", "Outbound Inspection Completed", "Completed", "Finalized"]
   const channels = ["Online", "Offline"]
   const stores = [
     { code: "US1001", name: "US_STORE_1" },
@@ -120,11 +124,7 @@ const getWorkItem = (id: string) => {
   const numId = Number(id)
   const listData = getListItemData(numId)
 
-  // Map list "Inspection" to detail "Inbound Inspection"
-  const statusMap: Record<string, string> = {
-    "Inspection": "Inbound Inspection",
-  }
-  const status = statusMap[listData.status] || listData.status
+  const status = listData.status
   const isCompleted = status === "Completed" || status === "Finalized"
 
   return {
@@ -138,8 +138,14 @@ const getWorkItem = (id: string) => {
     storeName: listData.store.name,
     status: status,
     workType: listData.workType,
-    processingPeriod: listData.period,
+    processingPeriod: status === "Pending" ? "(Basic) IIC Lab" : listData.period,
     assignee: listData.assignee,
+    workEta: (() => {
+      const approvalDateStr = `2025-08-${String(10 + (numId % 20)).padStart(2, "0")}`
+      const etaDate = new Date(approvalDateStr)
+      etaDate.setDate(etaDate.getDate() + 10)
+      return `${etaDate.getFullYear()}-${String(etaDate.getMonth() + 1).padStart(2, "0")}-${String(etaDate.getDate()).padStart(2, "0")}`
+    })(),
     country: numId === 15 ? "-" : "US",
     hasMembership: numId !== 15,
     membership: numId === 15
@@ -235,6 +241,7 @@ export default function WorkDetailPage({
   const [workStatus, setWorkStatus] = useState(item.status)
   const [workType, setWorkType] = useState(item.workType)
   const [processingPeriod, setProcessingPeriod] = useState(item.processingPeriod)
+  const [workEta, setWorkEta] = useState<Date | undefined>(item.workEta ? new Date(item.workEta) : undefined)
 
   // Editable address fields
   const [shippingType, setShippingType] = useState<"address" | "store">(item.customer.shippingType)
@@ -250,6 +257,7 @@ export default function WorkDetailPage({
     workStatus: item.status,
     workType: item.workType,
     processingPeriod: item.processingPeriod,
+    workEta: item.workEta || "",
     shippingType: item.customer.shippingType,
     address1: item.customer.address1,
     address2: item.customer.address2,
@@ -326,8 +334,8 @@ export default function WorkDetailPage({
   // Address fields are not editable for Online channel
   const isAddressEditable = isEditable && item.channel !== "Online"
 
-  // Label Print is only enabled when outbound registration is completed (Outbound Inspection status)
-  const isLabelPrintEnabled = workStatus === "Outbound Inspection"
+  // Label Print is enabled when TMS has returned tracking (Completed only, Finalized is read-only)
+  const isLabelPrintEnabled = workStatus === "Completed"
 
   // Track address changes
   const hasAddressChanges =
@@ -343,7 +351,8 @@ export default function WorkDetailPage({
     worker !== savedValues.worker ||
     workStatus !== savedValues.workStatus ||
     workType !== savedValues.workType ||
-    processingPeriod !== savedValues.processingPeriod
+    processingPeriod !== savedValues.processingPeriod ||
+    (workEta ? format(workEta, "yyyy-MM-dd") : "") !== savedValues.workEta
 
   const [addressSaveSuccess, setAddressSaveSuccess] = useState(false)
   const [workStatusSaveSuccess, setWorkStatusSaveSuccess] = useState(false)
@@ -372,12 +381,38 @@ export default function WorkDetailPage({
     if (processingPeriod !== savedValues.processingPeriod) {
       changes.push({ label: "Period", value: `${savedValues.processingPeriod || "-"} → ${processingPeriod || "-"}`, badgeClass: "bg-green-50 text-green-700 border-green-200" })
     }
+    const currentEtaStr = workEta ? format(workEta, "yyyy-MM-dd") : ""
+    if (currentEtaStr !== savedValues.workEta) {
+      changes.push({ label: "Work ETA", value: `${savedValues.workEta || "-"} → ${currentEtaStr || "-"}`, badgeClass: "bg-amber-50 text-amber-700 border-amber-200" })
+    }
     if (changes.length > 0) {
       setHistoryEntries((prev) => [{ type: "status", timestamp, changes }, ...prev])
     }
-    setSavedValues((prev) => ({ ...prev, worker, workStatus, workType, processingPeriod }))
+    setSavedValues((prev) => ({ ...prev, worker, workStatus, workType, processingPeriod, workEta: currentEtaStr }))
     setWorkStatusSaveSuccess(true)
     setTimeout(() => setWorkStatusSaveSuccess(false), 2000)
+
+    // Auto label registration when status changes to "Outbound Inspection Completed" (To Customer only)
+    if (workStatus === "Outbound Inspection Completed" && savedValues.workStatus !== "Outbound Inspection Completed" && isCustomerTab && !labelRegistered) {
+      console.log("Auto TMS Label Registration:", { orderId: item.id })
+      setLabelRegistered(true)
+      toast.success("Inspection completed — Label registration has been sent to TMS.")
+
+      // Simulate TMS response: tracking info received → auto change to Completed
+      setTimeout(() => {
+        setWorkStatus("Completed")
+        setSavedValues((prev) => ({ ...prev, workStatus: "Completed" }))
+        const now2 = new Date()
+        const ts2 = `${now2.getFullYear()}. ${String(now2.getMonth() + 1).padStart(2, "0")}.${String(now2.getDate()).padStart(2, "0")} ${String(now2.getHours()).padStart(2, "0")}:${String(now2.getMinutes()).padStart(2, "0")} (PST)`
+        setHistoryEntries((prev) => [{
+          type: "status" as const,
+          timestamp: ts2,
+          changes: [{ label: "Status", value: "Outbound Inspection Completed → Completed", badgeClass: "bg-blue-50 text-blue-700 border-blue-200" },
+                    { label: "TMS", value: "Tracking received from TMS", badgeClass: "bg-green-50 text-green-700 border-green-200" }],
+        }, ...prev])
+        toast.success("TMS tracking received — Status changed to Completed. Label Print is now available.")
+      }, 2000)
+    }
   }
 
   const handleWorkPrint = () => {
@@ -466,6 +501,8 @@ export default function WorkDetailPage({
         "bg-[oklch(0.92_0.12_85)] text-[oklch(0.45_0.12_70)] border-[oklch(0.85_0.15_85)]",
       "Inbound Inspection": "bg-[oklch(0.75_0.16_55)] text-white border-transparent",
       "In Progress": "bg-[oklch(0.7_0.15_145)] text-white border-transparent",
+      "Re Do": "bg-orange-500 text-white border-transparent",
+      "Outbound Inspection Completed": "bg-teal-500 text-white border-transparent",
       "Outbound Inspection": "bg-indigo-500 text-white border-transparent",
       Completed: "bg-blue-100 text-blue-700 border-blue-300",
       Finalized:
@@ -542,18 +579,31 @@ export default function WorkDetailPage({
               <FileText className="h-3.5 w-3.5" />
               Invoice
             </Button>
+            <div className="w-px h-5 bg-gray-400 mx-1" />
             {isCustomerTab ? (
-            /* To Customer: Label Registration only (B2C - TMS 송장 등록만) */
+            /* To Customer: Label Registration + Label Print (B2C) */
+            <>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setLabelRegConfirmOpen(true)}
-              disabled={labelRegistered}
+              disabled={labelRegistered || ["Completed", "Finalized"].includes(workStatus)}
               className="gap-1.5 bg-transparent h-7 text-xs px-2.5 border-indigo-300 text-indigo-600 hover:bg-indigo-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Truck className="h-3.5 w-3.5" />
               Label Registration
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLabelPrint}
+              disabled={!isLabelPrintEnabled}
+              className="gap-1.5 bg-transparent h-7 text-xs px-2.5 border-emerald-300 text-emerald-600 hover:bg-emerald-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Printer className="h-3.5 w-3.5" />
+              Label Print
+            </Button>
+            </>
             ) : (
             /* To Store: Outbound Registration only (B2B - 출고등록) */
             <Button
@@ -1121,6 +1171,8 @@ export default function WorkDetailPage({
                         <SelectItem value="Pending">Pending</SelectItem>
                         <SelectItem value="Inbound Inspection">Inbound Inspection</SelectItem>
                         <SelectItem value="In Progress">In Progress</SelectItem>
+                        <SelectItem value="Re Do">Re Do</SelectItem>
+                        <SelectItem value="Outbound Inspection Completed">Outbound Inspection Completed</SelectItem>
                         <SelectItem value="Outbound Inspection">Outbound Inspection</SelectItem>
                         <SelectItem value="Completed" disabled>Completed</SelectItem>
                         <SelectItem value="Finalized" disabled>Finalized</SelectItem>
@@ -1150,10 +1202,35 @@ export default function WorkDetailPage({
                         <SelectItem value="-">-</SelectItem>
                         <SelectItem value="(Basic) IIC Lab">(Basic) IIC Lab</SelectItem>
                         <SelectItem value="(Basic) Lab 1">(Basic) Lab 1</SelectItem>
-                        <SelectItem value="(Express) IIC Lab">(Express) IIC Lab</SelectItem>
-                        <SelectItem value="(Express) Lab 1">(Express) Lab 1</SelectItem>
+                        <SelectItem value="(Basic) Lab 2">(Basic) Lab 2</SelectItem>
+                        <SelectItem value="(Tint) IIC Lab">(Tint) IIC Lab</SelectItem>
+                        <SelectItem value="(Tint) Lab 1">(Tint) Lab 1</SelectItem>
+                        <SelectItem value="(Tint) Lab 2">(Tint) Lab 2</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-muted-foreground font-bold shrink-0 flex items-center gap-1.5"><CalendarIcon className="h-3 w-3" />Work ETA</span>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          disabled={!isEditable}
+                          className={`w-[150px] h-7 text-xs justify-start font-normal hover:bg-transparent hover:text-current ${!workEta ? "text-muted-foreground" : ""} ${!isEditable ? "opacity-60 cursor-not-allowed" : ""}`}
+                        >
+                          <CalendarIcon className="mr-1.5 h-3 w-3" />
+                          {workEta ? format(workEta, "yyyy-MM-dd") : "Select date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="end">
+                        <Calendar
+                          mode="single"
+                          selected={workEta}
+                          onSelect={setWorkEta}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </CardContent>
               </Card>
@@ -1191,48 +1268,78 @@ export default function WorkDetailPage({
                 <CardHeader className="pb-2 pt-3 px-4">
                   <CardTitle className="text-sm flex items-center gap-1.5">
                     Delivery Tracking
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs">This is information regarding the shipments received by the lab.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="px-4 pb-3">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground font-bold">Shipment Label No.</span>
-                      <span className="font-medium">{item.inboundTracking?.trackingNo || "-"}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground font-bold">Carrier</span>
-                      <span className="font-medium">{item.inboundTracking?.carrier || "-"}</span>
-                    </div>
-                  </div>
-                  {item.inboundTracking && (
-                    <button
-                      onClick={() => {
-                        const trackingUrl = `https://www.fedex.com/fedextrack/?trknbr=${item.inboundTracking?.trackingNo}`
-                        window.open(trackingUrl, "_blank")
-                      }}
-                      className="w-full flex items-center justify-between p-2 rounded-md border bg-muted/30 hover:bg-muted/50 transition-colors text-left group mt-2"
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <Badge variant="outline" className="shrink-0 text-[10px]">
-                          {item.inboundTracking.carrier}
-                        </Badge>
-                        <code className="text-[10px] font-mono truncate">
-                          {item.inboundTracking.trackingNo}
-                        </code>
+                <CardContent className="px-4 pb-3 space-y-4">
+                  {/* Inbound */}
+                  <div>
+                    <span className="text-xs font-bold text-indigo-400 mb-2 flex items-center gap-1"><Package className="h-3 w-3" />Inbound</span>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground font-bold">Shipment Label No.</span>
+                        <span>{item.inboundTracking?.trackingNo || "-"}</span>
                       </div>
-                      <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground shrink-0 ml-2" />
-                    </button>
-                  )}
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground font-bold">Carrier</span>
+                        <span>{item.inboundTracking?.carrier || "-"}</span>
+                      </div>
+                    </div>
+                    {item.inboundTracking && (
+                      <button
+                        onClick={() => {
+                          const trackingUrl = `https://www.fedex.com/fedextrack/?trknbr=${item.inboundTracking?.trackingNo}`
+                          window.open(trackingUrl, "_blank")
+                        }}
+                        className="w-full flex items-center justify-between p-2 rounded-md border bg-muted/30 hover:bg-muted/50 transition-colors text-left group mt-2"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Badge variant="outline" className="shrink-0 text-[10px]">
+                            {item.inboundTracking.carrier}
+                          </Badge>
+                          <code className="text-[10px] font-mono truncate">
+                            {item.inboundTracking.trackingNo}
+                          </code>
+                        </div>
+                        <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground shrink-0 ml-2" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="border-t" />
+
+                  {/* Outbound */}
+                  <div>
+                    <span className="text-xs font-bold text-indigo-400 mb-2 flex items-center gap-1"><Truck className="h-3 w-3" />Outbound</span>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground font-bold">Shipment Label No.</span>
+                        <span>{item.outboundTracking?.trackingNo || "-"}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground font-bold">Carrier</span>
+                        <span>{item.outboundTracking?.carrier || "-"}</span>
+                      </div>
+                    </div>
+                    {item.outboundTracking && (
+                      <button
+                        onClick={() => {
+                          const trackingUrl = `https://www.ups.com/track?tracknum=${item.outboundTracking?.trackingNo}`
+                          window.open(trackingUrl, "_blank")
+                        }}
+                        className="w-full flex items-center justify-between p-2 rounded-md border bg-muted/30 hover:bg-muted/50 transition-colors text-left group mt-2"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Badge variant="outline" className="shrink-0 text-[10px]">
+                            {item.outboundTracking.carrier}
+                          </Badge>
+                          <code className="text-[10px] font-mono truncate">
+                            {item.outboundTracking.trackingNo}
+                          </code>
+                        </div>
+                        <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground shrink-0 ml-2" />
+                      </button>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
 
